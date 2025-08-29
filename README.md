@@ -70,10 +70,11 @@
 
 ## 📂 폴더 구조
 
+```plaintext
 .
 ├── app/ # 라우팅/화면 엔트리
 │ ├── (tabs)/
-│ ├── \_layout.tsx
+│ ├── _layout.tsx
 │ └── modal.tsx
 ├── assets/ # 이미지/폰트 등 정적 자원
 ├── constants/
@@ -81,7 +82,7 @@
 ├── features/
 │ └── routine/
 │ ├── api.ts # fetch/create/complete (Mock→실서버)
-│ ├── components/ # RoutineCard/AddRoutineModal/CompletionModal 등
+│ ├── components/ # RoutineCard/AddRoutineModal/CompletionModal
 │ ├── store.ts # Zustand 전역 스토어
 │ ├── types.ts # Routine/CompletionRecord 타입
 │ └── utils.ts # 과부하 제안(상향/유지/하향)
@@ -98,3 +99,4 @@
 ├── package.json
 ├── tailwind.config.js # (옵션)
 └── tsconfig.json
+```

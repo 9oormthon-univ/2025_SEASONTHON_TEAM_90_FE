@@ -11,6 +11,6 @@
       "@features/*": ["features/*"],
       "@shared/*": ["shared/*"]
     },
-    "types": ["react", "react-native", "expo"]
+    "types": ["react", "react-native", "expo","nativewind/types"]
   }
 }

@@ -9,7 +9,6 @@ interface CalendarState {
     monthCache: Record<string, MonthData>; // month -> data
     isLoading: boolean;
 
-
     setMonth: (m: string) => void;
     setSelectedDate: (d: string) => void;
     setMonthData: (m: string, data: MonthData) => void;
@@ -22,7 +21,6 @@ export const useCalendarStore = create<CalendarState>((set) => ({
     selectedDate: todayYMD(),
     monthCache: {},
     isLoading: false,
-
 
     setMonth: (m) => set({ currentMonth: m }),
     setSelectedDate: (d) => set({ selectedDate: d }),

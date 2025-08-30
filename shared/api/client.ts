@@ -6,7 +6,6 @@ import axios from 'axios';
 
 /**
 * 환경설정: EXPO_PUBLIC_API_BASE_URL 사용
-* - src/shared/config/env.ts에서 가져오는 것이 이상적이나, 의존 줄이기 위해 안전 기본값 제공
 */
 const API_BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL ?? 'http://localhost:8080';
 
@@ -25,7 +24,7 @@ export const setOnUnauthorized = (handler: () => void) => {
 */
 let memToken: string | null = null;
 
-
+/** 엑세스 토큰 가져오기 함수(header 설정) */
 export const getAccessToken = async () => {
     if (memToken) return memToken;
     const t = await AsyncStorage.getItem('accessToken');
@@ -33,14 +32,14 @@ export const getAccessToken = async () => {
     return t;
 };
 
-
+/** 엑세스 토큰 set 설정 */
 export const setAccessToken = async (token: string | null) => {
     memToken = token;
     if (token) await AsyncStorage.setItem('accessToken', token);
     else await AsyncStorage.removeItem('accessToken');
 };
 
-
+/** API 호출 포맷 정의(사용자 OS에 따른 헤더 설정) */
 const client = axios.create({
     baseURL: API_BASE_URL,
     timeout: 15_000,

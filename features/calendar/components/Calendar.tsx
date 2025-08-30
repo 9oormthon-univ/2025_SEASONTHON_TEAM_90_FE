@@ -1,20 +1,17 @@
-import React from 'react';
 import { View, Text, Pressable } from 'react-native';
-import MonthHeader from '../components/MonthHeader';
-import CalendarGrid from '../components/CalendarGrid';
+import MonthHeader from './MonthHeader';
+import CalendarGrid from './CalendarGrid';
 import { useCalendar } from '../hooks/useCalendar';
 import { todayYMD } from '../utils/date';
 
-
 /**
-* 홈(캘린더) 화면 엔트리. 네비게이션 연결은 app/navigation에서 처리.
+* Calendar UI 컴포넌트 (상태/훅 포함).
 */
-const CalendarPage: React.FC = () => {
+const Calendar: React.FC = () => {
     const { currentMonth, isLoading, matrix, getDayMeta, goPrev, goNext } = useCalendar();
 
 
     const onSelectDate = (ymd: string) => {
-        // TODO: 상세/기록 페이지로 이동 (딥링크 연동 시 사용)
         console.log('select', ymd);
     };
 
@@ -44,4 +41,4 @@ const CalendarPage: React.FC = () => {
 };
 
 
-export default CalendarPage;
+export default Calendar;

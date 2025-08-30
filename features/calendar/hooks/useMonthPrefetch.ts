@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { addMonths } from '../utils/date';
-import { getMonthRecords } from '../api/getMonthRecords';
+import { getMonthSuccessRate } from '../api/getMonthSuccessRate';
 import { aggregateByDay } from '../utils/emotion';
 import { useCalendarStore } from '../store/calendar.store';
 
@@ -15,7 +15,7 @@ export const useMonthPrefetch = (baseMonth: string) => {
         targets.forEach(async (m) => {
             if (monthCache[m]) return;
             try {
-                const list = await getMonthRecords(m);
+                const list = await getMonthSuccessRate(m);
                 setMonthData(m, { month: m, days: aggregateByDay(list) });
             } catch {
                 /* ignore */

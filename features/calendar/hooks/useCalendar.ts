@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef } from 'react';
-import { getMonthRecords } from '../api/getMonthRecords';
+import { getMonthSuccessRate } from '../api/getMonthSuccessRate';
 import { addMonths, getMonthMatrix, isSameMonth } from '../utils/date';
 import { useCalendarStore } from '../store/calendar.store';
 import { aggregateByDay } from '../utils/emotion';
@@ -24,7 +24,7 @@ export const useCalendar = () => {
             abortRef.current = ctl;
             setLoading(true);
             try {
-                const list = await getMonthRecords(currentMonth, ctl.signal);
+                const list = await getMonthSuccessRate(currentMonth, ctl.signal);
                 const days = aggregateByDay(list);
                 const data: MonthData = { month: currentMonth, days };
                 setMonthData(currentMonth, data);
@@ -44,7 +44,7 @@ export const useCalendar = () => {
         const preload = async (m: string) => {
             if (monthCache[m]) return;
             try {
-                const list = await getMonthRecords(m);
+                const list = await getMonthSuccessRate(m);
                 const data: MonthData = { month: m, days: aggregateByDay(list) };
                 setMonthData(m, data);
             } catch {

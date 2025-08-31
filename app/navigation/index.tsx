@@ -1,52 +1,41 @@
-// React Navigation 기본 스택 + 탭 구성 (Calendar 탭 포함)
-// - 다른 탭/페이지는 이후 단계에서 추가
-
+// 기본 내보내기 포함한 네비게이션 루트
 
 import React from 'react';
+import { Text } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import { Text } from 'react-native';
-import { CalendarPage } from '@/features/calendar';
 
+import CalendarDemoPage from '@/features/calendar/pages/CalendarDemoPage'; 
 
-// 타입
+// 네비게이션 파라미터 타입
 export type RootStackParamList = {
     MainTabs: undefined;
-    // Record, Routine, Settings 등은 이후 확장
 };
-
 
 export type MainTabParamList = {
-    Calendar: undefined;
-    // Home, Dashboard 등 필요 시 확장
+    CalendarDemo: undefined;
 };
-
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 const Tab = createBottomTabNavigator<MainTabParamList>();
 
-
-const CalendarTabScreen = () => {
-    return <CalendarPage />;
-};
-
-
-const MainTabs = () => (
+// 탭 화면
+const MainTabs: React.FC = () => (
     <Tab.Navigator screenOptions={{ headerShown: false }}>
         <Tab.Screen
-            name="Calendar"
-            component={CalendarTabScreen}
+            name="CalendarDemo"
+            component={CalendarDemoPage}
             options={{
                 tabBarLabel: '캘린더',
-                // 아이콘은 UI 단계에서 지정
+                // [optional] 아이콘은 이후 UI 단계에서 교체
                 tabBarIcon: () => <Text>📅</Text>,
             }}
         />
     </Tab.Navigator>
 );
 
-
+// 루트 스택
 const RootNavigation: React.FC = () => {
     return (
         <NavigationContainer>
@@ -57,5 +46,4 @@ const RootNavigation: React.FC = () => {
     );
 };
 
-
-export default RootNavigation;
+export default RootNavigation; // [added] 기본 내보내기

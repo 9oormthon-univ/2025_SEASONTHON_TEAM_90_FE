@@ -1,33 +1,54 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { View } from 'react-native';
 import DayCell from './DayCell';
+import WeekdayHeader from './WeekdayHeader';
+import { todayYMD } from '../utils/date';
 
+type Meta = {
+    ymd: string;
+    inMonth: boolean;
+    isToday: boolean;
+    aggregate?: { avgCompletion: number | null; hasRecord: boolean };
+};
 
-interface Props {
+type Props = {
     matrix: Date[][];
-    getDayMeta: (d: Date) => { ymd: string; inMonth: boolean; aggregate?: any };
-    onSelectDate?: (ymd: string) => void;
-}
+    getDayMeta: (d: Date) => Meta;
+    onSelectDate: (ymd: string) => void;
+    variant?: 'month' | 'week'; // ← [추가] 모달 등 축소 환경에서 'week'
+};
 
+/** 캘린더 그리드 렌더 */
+const CalendarGrid: React.FC<Props> = ({ matrix, getDayMeta, onSelectDate, variant = 'month' }) => {
+    // 주간 모드: 오늘이 포함된 주만 렌더
+    const filtered = useMemo(() => {
+        if (variant === 'month') return matrix;
+        const today = todayYMD();
+        const row = matrix.find((week) => week.some((d) => {
+            const meta = getDayMeta(d);
+            return meta.ymd === today;
+        }));
+        return row ? [row] : matrix.slice(0, 1); // 오늘 주 없으면 1행만
+    }, [matrix, variant, getDayMeta]);
 
-/** 6x7 그리드 렌더 (FlatList 최적화는 Step 2/3에서 고려) */
-const CalendarGrid: React.FC<Props> = ({ matrix, getDayMeta, onSelectDate }) => {
     return (
-        <View>
-            {matrix.map((week, wi) => (
-                <View key={wi} className="flex-row">
+        <View className="px-[16px]">
+            <WeekdayHeader /> {/* 요일 라벨 */}
+            {filtered.map((week, wi) => (
+                <View key={wi} className="flex-row my-1">
                     {week.map((d, di) => {
                         const meta = getDayMeta(d);
                         return (
-                            <View key={di} className="flex-1">
-                                <DayCell
-                                    ymd={meta.ymd}
-                                    day={d.getDate()}
-                                    inMonth={meta.inMonth}
-                                    aggregate={meta.aggregate}
-                                    onPress={onSelectDate}
-                                />
-                            </View>
+                            <DayCell
+                                key={di}
+                                day={d}
+                                ymd={meta.ymd}
+                                inMonth={meta.inMonth}
+                                isToday={meta.isToday}
+                                completion={meta.aggregate?.avgCompletion ?? null}
+                                hasRecord={!!meta.aggregate?.hasRecord}
+                                onPress={onSelectDate}
+                            />
                         );
                     })}
                 </View>

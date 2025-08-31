@@ -3,36 +3,16 @@
 */
 export type Emotion = 'HAPPY' | 'NEUTRAL' | 'SAD' | 'ANGRY';
 
-
-/**
-* 서버 레코드 DTO. (GET /v1/records?month=YYYY-MM)
-*/
-export interface RecordDto {
-    id: string;
-    routineId: string;
-    /** YYYY-MM-DD (로컬 타임존 기준) */
-    date: string;
-    emotion: Emotion;
-    /** 0~100 (0: 미완료, 1~99: 부분, 100: 완료) */
-    completion: number;
-    note: string;
-}
-
-
-export type DayStatus = 'UNRECORDED' | 'INCOMPLETE' | 'PARTIAL' | 'FULL';
-
-
 export interface DayAggregate {
     /** YYYY-MM-DD */
     date: string;
-    topEmotion: Emotion | null;
+    topEmotion: Emotion | null; // Step2 API에는 감정 정보 없음 → null 유지(후속 확장)
     status: DayStatus;
-    /** 해당 날짜에 레코드가 있었는지 (미기록 점 표시 용) */
     hasRecord: boolean;
-    /** 평균 완성률 (UI 참고용) */
-    avgCompletion: number | null;
+    avgCompletion: number | null; // 성공률(%)를 그대로 저장
 }
 
+export type DayStatus = 'UNRECORDED' | 'INCOMPLETE' | 'PARTIAL' | 'FULL';
 
 export interface MonthData {
     /** YYYY-MM */
@@ -40,3 +20,75 @@ export interface MonthData {
     days: Record<string, DayAggregate>;
 }
 
+export interface DailySuccessRateDto {
+    date: string; // YYYY-MM-DD
+    success_rate: number; // 0~100 (소수 가능)
+}
+
+export interface MonthlySuccessRateDto {
+    month: string; // YYYY-MM
+    daily_success_rates: DailySuccessRateDto[];
+}
+
+
+export interface GetMonthlySuccessRateResponse {
+    code: string;
+    message: string;
+    data: MonthlySuccessRateDto;
+}
+
+
+export interface RoutineCategoryDto {
+    category_id: number;
+    category_name: string;
+}
+
+
+export interface RoutineGrowthModeDto {
+    enabled: boolean;
+    goal_type?: 'TIME' | 'COUNT';
+    goal_value?: number;
+    period_days?: number;
+    increase_value?: number;
+    current_period_end?: string; // YYYY-MM-DD
+    auto_rollover?: boolean;
+}
+
+
+export interface RoutineTodayRecordDto {
+    record_id: number;
+    achieved_value: number;
+    completion_rate: number; // 0~100
+    is_completed: boolean;
+    emotion?: string; // 서버 한글 감정 문자열 (후속 매핑 계획)
+    comment?: string;
+}
+
+
+export interface RoutineDto {
+    routine_id: number;
+    routine_name: string;
+    category: RoutineCategoryDto;
+    current_value?: number;
+    unit?: string;
+    is_active: boolean;
+    growth_mode: RoutineGrowthModeDto;
+    today_record: RoutineTodayRecordDto | null;
+    streak?: number;
+    created_at?: string; // ISO
+}
+
+
+export interface GetRoutinesResponse {
+    code: string;
+    message: string;
+    data: {
+        routines: RoutineDto[];
+        summary?: {
+            total_routines: number;
+            completed_today: number;
+            partial_completed_today: number;
+            not_started_today: number;
+        };
+    };
+}

@@ -1,54 +1,40 @@
 import React from 'react';
-import { View, Text, Pressable } from 'react-native';
-import type { Emotion, DayStatus, DayAggregate } from '../types';
+import { Pressable, Text, View } from 'react-native';
+import DayCompletionIcon from './DayCompletionIcon';
 
-
-interface Props {
+type Props = {
+    day: Date;
     ymd: string;
-    day: number;
     inMonth: boolean;
-    aggregate?: DayAggregate; // 없으면 미기록(점)
-    isToday?: boolean;
-    onPress?: (ymd: string) => void;
-}
-
-
-const EMOJI: Record<Emotion, string> = {
-    HAPPY: '😊',
-    NEUTRAL: '😐',
-    SAD: '😢',
-    ANGRY: '😠',
+    isToday: boolean;
+    completion: number | null;    // avgCompletion
+    hasRecord: boolean;
+    onPress: (ymd: string) => void;
 };
 
-
-const statusDot = (s: DayStatus | undefined) => {
-    if (!s) return '·'; // 미기록 dot
-    if (s === 'FULL') return '●';
-    if (s === 'PARTIAL') return '◐';
-    return '○'; // INCOMPLETE
-};
-
-
-/** 날짜 셀 (스타일은 최소, 의미만 제공) */
-const DayCell: React.FC<Props> = ({ ymd, day, inMonth, aggregate, isToday, onPress }) => {
-    const emoji = aggregate?.topEmotion ? EMOJI[aggregate.topEmotion] : '·';
-    const dot = statusDot(aggregate?.status);
-
-
+const DayCell: React.FC<Props> = ({ day, ymd, inMonth, completion, hasRecord, onPress, isToday }) => {
+    if (!inMonth) {
+        // 다른 달 날짜는 보이지 않음(빈 칸)
+        return <View className="flex-1 p-2" />;
+    }
+    const num = day.getDate(); // 날짜
+    const numEl = isToday ? (
+        // 오늘 스타일 : rounded-full h-[21px] w-[21px] bg[#816E57] text[#F7F0DE]
+        <View className="items-center justify-center rounded-full" style={{ width: 21, height: 21, backgroundColor: '#816E57' }}>
+            <Text className="font-choco text-[14px]" style={{ color: '#F7F0DE' }}>{num}</Text>
+        </View>
+    ) : (
+        // 오늘이 아닌 경우 : 글자색만
+        <Text className="font-choco text-[14px]" style={{ color: '#5F5548' }}>{num}</Text>
+    );
     return (
-        <Pressable
-            accessibilityRole="button"
-            onPress={() => onPress?.(ymd)}
-            className="items-center justify-center p-2"
-        >
-            <View className={`items-center justify-center ${!inMonth ? 'opacity-40' : ''}`}>
-                <Text className={`text-xs ${isToday ? 'font-bold' : ''}`}>{day}</Text>
-                <Text>{emoji}</Text>
-                <Text className="text-xs">{dot}</Text>
+        <Pressable className="items-center flex-1 px-[10px]" onPress={() => onPress(ymd)} accessibilityRole="button">
+            {numEl}
+            <View >
+                <DayCompletionIcon value={completion} hasRecord={hasRecord} />
             </View>
         </Pressable>
     );
 };
-
 
 export default DayCell;

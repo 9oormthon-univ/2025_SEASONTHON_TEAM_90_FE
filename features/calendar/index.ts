@@ -1,6 +1,6 @@
-export { default as Calendar } from './components/Calendar';
-export { default as CalendarMainPage } from './pages/CalendarMainPage';
+export { default as Calendar } from './components/CalendarView';
+export { default as CalendarDemoPage } from './pages/CalendarDemoPage';
 export * from './hooks/useCalendar';
 export * from './types';
-export * from './api/getMonthSuccessRate';
+export * from './api/getMonthlySuccessRate';
 export * from './api/getRoutines';

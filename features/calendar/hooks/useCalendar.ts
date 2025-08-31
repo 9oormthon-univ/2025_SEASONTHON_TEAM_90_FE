@@ -1,31 +1,49 @@
 import { useEffect, useMemo, useRef } from 'react';
-import { getMonthSuccessRate } from '../api/getMonthSuccessRate';
-import { addMonths, getMonthMatrix, isSameMonth } from '../utils/date';
 import { useCalendarStore } from '../store/calendar.store';
-import { aggregateByDay } from '../utils/emotion';
-import { MonthData } from '../types';
+import { addMonths, getMonthMatrix, isSameMonth } from '../utils/date';
+import type { MonthData, DayAggregate, MonthlySuccessRateDto } from '../types';
+import { getMonthlySuccessRate } from '../api/getMonthlySuccessRate'; // ← 현재는 MOCK-first 파일
+import { todayYMD } from '../utils/date';
 
+// import { getMonthlySuccessRate as getMonthlySuccessRateReal } from '../api/getMonthlySuccessRate'; 
+// ↑ [REAL]로 스왑 시 위 import 그대로 사용(파일 내 주석 코드로 자동 전환 가능)
 
-/**
-* 캘린더 핵심 훅: 월 데이터 로드, 네비게이션, 매트릭스 계산.
-* - 500ms 내 로딩 체감 개선: 인접 월 선(先)프리패치 + 캐시 사용.
-*/
+const mapRateToStatus = (rate: number | null | undefined) => {
+    if (rate == null) return 'UNRECORDED' as const;
+    if (rate >= 100) return 'FULL' as const;
+    if (rate > 0) return 'PARTIAL' as const;
+    return 'INCOMPLETE' as const;
+};
+
 export const useCalendar = () => {
     const { currentMonth, monthCache, setMonthData, isLoading, setLoading, setMonth } = useCalendarStore();
     const abortRef = useRef<AbortController | null>(null);
 
-
-    // 현재 월 데이터 가져오기 (캐시 우선)
     useEffect(() => {
         const run = async () => {
-            if (monthCache[currentMonth]) return; // cache hit
+            if (monthCache[currentMonth]) return;
+
             abortRef.current?.abort();
             const ctl = new AbortController();
             abortRef.current = ctl;
             setLoading(true);
             try {
-                const list = await getMonthSuccessRate(currentMonth, ctl.signal);
-                const days = aggregateByDay(list);
+                // === [MOCK] ===
+                const monthly: MonthlySuccessRateDto = await getMonthlySuccessRate(currentMonth, ctl.signal);
+                // const monthly: MonthlySuccessRateDto = await getMonthlySuccessRateReal(currentMonth, ctl.signal); // ← [REAL] 사용 시
+                // ========================
+
+                const days: Record<string, DayAggregate> = {};
+                monthly.daily_success_rates.forEach((d) => {
+                    const rate = typeof d.success_rate === 'number' ? Math.round(d.success_rate) : null;
+                    days[d.date] = {
+                        date: d.date,
+                        topEmotion: null, // 감정은 후속 API에서 매핑
+                        status: mapRateToStatus(rate),
+                        hasRecord: rate != null,
+                        avgCompletion: rate,
+                    };
+                });
                 const data: MonthData = { month: currentMonth, days };
                 setMonthData(currentMonth, data);
             } finally {
@@ -36,17 +54,30 @@ export const useCalendar = () => {
         return () => abortRef.current?.abort();
     }, [currentMonth, monthCache, setLoading, setMonthData]);
 
-
-    // 인접 월 프리패치(체감 로딩↓)
+    // 인접 월 프리패치
     useEffect(() => {
         const prev = addMonths(currentMonth, -1);
         const next = addMonths(currentMonth, 1);
         const preload = async (m: string) => {
             if (monthCache[m]) return;
             try {
-                const list = await getMonthSuccessRate(m);
-                const data: MonthData = { month: m, days: aggregateByDay(list) };
-                setMonthData(m, data);
+                // === [MOCK] ===
+                const monthly: MonthlySuccessRateDto = await getMonthlySuccessRate(m);
+                // const monthly: MonthlySuccessRateDto = await getMonthlySuccessRateReal(m); // ← [REAL] 사용 시
+                // ========================
+
+                const days: MonthData['days'] = {};
+                monthly.daily_success_rates.forEach((d) => {
+                    const rate = typeof d.success_rate === 'number' ? Math.round(d.success_rate) : null;
+                    days[d.date] = {
+                        date: d.date,
+                        topEmotion: null,
+                        status: mapRateToStatus(rate),
+                        hasRecord: rate != null,
+                        avgCompletion: rate,
+                    };
+                });
+                setMonthData(m, { month: m, days });
             } catch {
                 /* ignore */
             }
@@ -55,13 +86,9 @@ export const useCalendar = () => {
         void preload(next);
     }, [currentMonth, monthCache, setMonthData]);
 
-
     const matrix = useMemo(() => getMonthMatrix(currentMonth, 0), [currentMonth]);
-
-
     const goPrev = () => setMonth(addMonths(currentMonth, -1));
     const goNext = () => setMonth(addMonths(currentMonth, 1));
-
 
     const getDayMeta = (d: Date) => {
         const m = monthCache[currentMonth];
@@ -70,20 +97,10 @@ export const useCalendar = () => {
             .toString()
             .padStart(2, '0')}`;
         const agg = m?.days[ymd];
-        return {
-            ymd,
-            inMonth: isSameMonth(currentMonth, d),
-            aggregate: agg, // undefined면 미기록(점)
-        } as const;
+
+        const isT = ymd === todayYMD(); // 오늘 저장
+        return { ymd, inMonth: isSameMonth(currentMonth, d), isToday: isT, aggregate: agg } as const;
     };
 
-
-    return {
-        currentMonth,
-        isLoading,
-        matrix,
-        getDayMeta,
-        goPrev,
-        goNext,
-    } as const;
+    return { currentMonth, isLoading, matrix, getDayMeta, goPrev, goNext } as const;
 };

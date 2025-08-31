@@ -2,10 +2,7 @@ import { useEffect } from 'react';
 import { addMonths } from '../utils/date';
 import { useCalendarStore } from '../store/calendar.store';
 import type { MonthData, DayAggregate, MonthlySuccessRateDto } from '../types';
-import { getMonthlySuccessRate } from '../api/getMonthlySuccessRate'; // ← 현재는 MOCK-first 파일
-
-// import { getMonthlySuccessRate as getMonthlySuccessRateReal } from '../api/getMonthlySuccessRate';
-// ↑ [REAL]로 스왑 시 위 import 그대로 사용(파일 내 주석 코드로 자동 전환 가능)
+import { getMonthlySuccessRate } from '../api/getMonthlySuccessRate';
 
 const mapRateToStatus = (rate: number | null | undefined) => {
     if (rate == null) return 'UNRECORDED' as const;
@@ -14,7 +11,10 @@ const mapRateToStatus = (rate: number | null | undefined) => {
     return 'INCOMPLETE' as const;
 };
 
-/** 외부 화면에서 캘린더 진입이 잦을 때, 백그라운드 선로딩 */
+/**
+ * 인접 월(이전/현재/다음) 선로딩
+ * 화면 진입 시 로딩 개선
+*/
 export const useMonthPrefetch = (baseMonth: string) => {
     const { monthCache, setMonthData } = useCalendarStore();
 
@@ -24,10 +24,10 @@ export const useMonthPrefetch = (baseMonth: string) => {
         targets.forEach(async (m) => {
             if (monthCache[m]) return;
             try {
-                // === [MOCK] ===
-                const monthly: MonthlySuccessRateDto = await getMonthlySuccessRate(m);
-                // const monthly: MonthlySuccessRateDto = await getMonthlySuccessRateReal(m); // ← [REAL] 사용 시
-                // ========================
+                // === [REAL API] ===
+                const monthly: MonthlySuccessRateDto = await getMonthlySuccessRate(m); // [changed]
+                // === [MOCK 참고용] ===
+                // const monthly = await getMonthlySuccessRateMock(m);
 
                 const days: MonthData['days'] = {};
                 monthly.daily_success_rates.forEach((d) => {
@@ -42,7 +42,7 @@ export const useMonthPrefetch = (baseMonth: string) => {
                 });
                 setMonthData(m, { month: m, days });
             } catch {
-                /* ignore */
+                /* ignore prefetch error */
             }
         });
     }, [baseMonth, monthCache, setMonthData]);

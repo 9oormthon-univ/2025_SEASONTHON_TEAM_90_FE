@@ -65,30 +65,22 @@ export interface RoutineTodayRecordDto {
 }
 
 
-export interface RoutineDto {
-    routine_id: number;
-    routine_name: string;
-    category: RoutineCategoryDto;
-    current_value?: number;
-    unit?: string;
-    is_active: boolean;
-    growth_mode: RoutineGrowthModeDto;
-    today_record: RoutineTodayRecordDto | null;
-    streak?: number;
-    created_at?: string; // ISO
-}
+export type RoutineDto = {
+    routineId: number;
+    category: string;      // e.g. "HEALTH"
+    title: string;
+    description?: string;
+    isGrowthMode: boolean;
+    targetType?: 'NUMBER' | 'TIME';
+    targetValue?: number;
+    targetCycleDays?: number;
+    targetIncrement?: number;
+    createdAt: string;
+    updatedAt: string;
+};
 
 
-export interface GetRoutinesResponse {
-    code: string;
-    message: string;
-    data: {
-        routines: RoutineDto[];
-        summary?: {
-            total_routines: number;
-            completed_today: number;
-            partial_completed_today: number;
-            not_started_today: number;
-        };
-    };
-}
+export type GetRoutinesResponse = {
+    routines: RoutineDto[];
+    totalCount: number;
+};

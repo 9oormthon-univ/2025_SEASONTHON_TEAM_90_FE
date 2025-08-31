@@ -19,16 +19,14 @@ export interface GridPaperProps {
 
 /**
  * 모눈종이(Grid paper) 배경.
- * - RN(Web/Native) 공용
- * - react-native-svg-transformer 필요
  */
 const GridPaper: React.FC<GridPaperProps> = ({
-    cell = 24, // 이미지의 칸 크기에 맞춰 24px 유지 (혹은 20px, 28px 등 실험)
-    majorEvery = 5, // 굵은 선은 5칸마다 (이미지처럼 주 단위 구분을 하려면 패턴 변경 필요)
-    // --- 이미지에 맞춰 색상 변경 ---
-    bg = '#f6f0de', // 더 밝은 배경색 (거의 흰색에 가까움)
-    major = '#fffdf6', // 굵은 선 색상
-    topShade = false,  // 이미지에 상단 그림자가 없으므로 false로 변경
+    cell = 24, // 이미지의 칸 크기에 맞춰 24px 유지
+    majorEvery = 5, // 굵은 선은 5칸마다
+    // 스포이드 추출 색상
+    bg = '#f6f0de',
+    major = '#fffdf6', // 선
+    topShade = false, 
     opacity = 1,
 }) => {
     const group = cell * majorEvery;

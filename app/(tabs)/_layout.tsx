@@ -1,57 +1,73 @@
-import React from 'react';
-import FontAwesome from '@expo/vector-icons/FontAwesome';
-import { Link, Tabs } from 'expo-router';
-import { Pressable } from 'react-native';
+import { Tabs } from "expo-router";
+import Colors from "@/constants/Colors";
 
-import Colors from '@/constants/Colors';
-import { useColorScheme } from '@/components/useColorScheme';
-import { useClientOnlyValue } from '@/components/useClientOnlyValue';
+// SVG 컴포넌트 임포트
+import Home from "@/assets/icons/home.svg";
+import HomeActive from "@/assets/icons/homeclick.svg";
+import Dashboard from "@/assets/icons/dashboard.svg";
+import DashboardActive from "@/assets/icons/dashboardclick.svg";
+import My from "@/assets/icons/my.svg";
+import MyActive from "@/assets/icons/myclick.svg";
+import Ranking from "@/assets/icons/ranking.svg";
 
-// You can explore the built-in icon families and icons on the web at https://icons.expo.fyi/
-function TabBarIcon(props: {
-  name: React.ComponentProps<typeof FontAwesome>['name'];
-  color: string;
+function TabSvg({
+  Active,
+  Inactive,
+  focused,
+  size = 37, //
+}: {
+  Active?: React.FC<any>;
+  Inactive: React.FC<any>;
+  focused: boolean;
+  size?: number;
 }) {
-  return <FontAwesome size={28} style={{ marginBottom: -3 }} {...props} />;
+  const Comp = focused && Active ? Active : Inactive;
+  return <Comp width={size} height={size} />;
 }
 
-export default function TabLayout() {
-  const colorScheme = useColorScheme();
-
+export default function TabsLayout() {
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: Colors[colorScheme ?? 'light'].tint,
-        // Disable the static render of the header on web
-        // to prevent a hydration error in React Navigation v6.
-        headerShown: useClientOnlyValue(false, true),
-      }}>
+        headerShown: false,
+        tabBarShowLabel: false,
+        tabBarStyle: {
+          backgroundColor: Colors.white,
+          borderTopWidth: 0.5,
+          borderTopColor: Colors.mute,
+          height: 80,
+        },
+      }}
+    >
       <Tabs.Screen
-        name="index"
+        name="home"
         options={{
-          title: 'Tab One',
-          tabBarIcon: ({ color }) => <TabBarIcon name="code" color={color} />,
-          headerRight: () => (
-            <Link href="/modal" asChild>
-              <Pressable>
-                {({ pressed }) => (
-                  <FontAwesome
-                    name="info-circle"
-                    size={25}
-                    color={Colors[colorScheme ?? 'light'].text}
-                    style={{ marginRight: 15, opacity: pressed ? 0.5 : 1 }}
-                  />
-                )}
-              </Pressable>
-            </Link>
+          tabBarIcon: ({ focused }) => (
+            <TabSvg Active={HomeActive} Inactive={Home} focused={focused} />
           ),
         }}
       />
       <Tabs.Screen
-        name="two"
+        name="dashboard"
         options={{
-          title: 'Tab Two',
-          tabBarIcon: ({ color }) => <TabBarIcon name="code" color={color} />,
+          tabBarIcon: ({ focused }) => (
+            <TabSvg Active={DashboardActive} Inactive={Dashboard} focused={focused} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="my"
+        options={{
+          tabBarIcon: ({ focused }) => (
+            <TabSvg Active={MyActive} Inactive={My} focused={focused} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="ranking"
+        options={{
+          // MVP 1단계에 랭킹 없음
+          tabBarIcon: () => <Ranking width={32} height={32} />,
         }}
       />
     </Tabs>

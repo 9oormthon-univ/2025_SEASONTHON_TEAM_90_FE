@@ -23,22 +23,34 @@ const makeMonthlySuccessRateMock = (month: string): MonthlySuccessRateDto => {
     };
 };
 
+// RN(Android)에는 DOMException이 없으므로 대체 에러 팩토리 사용
+const abortError = () => {
+    const err = new Error('Aborted');
+    err.name = 'AbortError';
+    return err;
+};
+
+// abort 신호를 지원하는 sleep 유틸
+const sleepWithAbort = (ms: number, signal?: AbortSignal) =>
+    new Promise<void>((resolve, reject) => {
+        if (signal?.aborted) return reject(abortError());
+        const t = setTimeout(resolve, ms);
+        if (signal) {
+            const onAbort = () => {
+                clearTimeout(t);
+                reject(abortError());
+            };
+            signal.addEventListener('abort', onAbort, { once: true });
+        }
+    });
+
 // --- [현재 활성] MOCK 호출 ---
 export const getMonthlySuccessRate = async (
     month: string,
     signal?: AbortSignal
 ): Promise<MonthlySuccessRateDto> => {
-    await new Promise<void>((r, j) => {
-        const t = setTimeout(r, 200);
-        if (signal) {
-            const onAbort = () => {
-                clearTimeout(t);
-                j(new DOMException('Aborted', 'AbortError'));
-            };
-            if (signal.aborted) return onAbort();
-            signal.addEventListener('abort', onAbort, { once: true });
-        }
-    });
+    // [수정] DOMException 대신 sleepWithAbort 사용
+    await sleepWithAbort(200, signal);
     return makeMonthlySuccessRateMock(month);
 };
 

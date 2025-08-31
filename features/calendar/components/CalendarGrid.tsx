@@ -33,7 +33,7 @@ const CalendarGrid: React.FC<Props> = ({ matrix, getDayMeta, onSelectDate, varia
 
     return (
         <View className="px-[16px]">
-            <WeekdayHeader /> {/* 요일 라벨 */}
+            <WeekdayHeader />
             {filtered.map((week, wi) => (
                 <View key={wi} className="flex-row my-1">
                     {week.map((d, di) => {

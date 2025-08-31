@@ -34,27 +34,19 @@ const GridPaper: React.FC<GridPaperProps> = ({
     const group = cell * majorEvery;
 
     return (
-        <Svg pointerEvents="none" style={StyleSheet.absoluteFill as any} opacity={opacity} width="100%" height="100%" preserveAspectRatio="none">
+        <Svg pointerEvents="none" style={StyleSheet.absoluteFillObject} opacity={opacity} width="100%" height="100%" preserveAspectRatio="none">
             <Defs>
                 <Pattern id="grid-minor" width={cell} height={cell} patternUnits="userSpaceOnUse">
                     <Rect width={cell} height={cell} fill={bg} />
-                    <Path
-                        d={`M 0 ${cell} H ${cell} M ${cell} 0 V ${cell}`}
-                        stroke={major}      // 얇은 선(minor) 색상 대신 굵은 선(major) 색상 사용
-                        strokeWidth={1.5}   // 굵은 선의 두께(1.5)로 변경
-                    />
+                    <Path d={`M 0 ${cell} H ${cell} M ${cell} 0 V ${cell}`} stroke={major} strokeWidth={1.5} />
                 </Pattern>
-
-                {/* 상단 그라데이션 */}
                 <LinearGradient id="topShade" x1="0" y1="0" x2="0" y2="1">
                     <Stop offset="0" stopColor="black" stopOpacity="0.08" />
                     <Stop offset="1" stopColor="black" stopOpacity="0" />
                 </LinearGradient>
             </Defs>
 
-            {/* 이제 grid-minor 패턴 하나만 렌더링하면 됩니다. */}
             <Rect x="0" y="0" width="100%" height="100%" fill="url(#grid-minor)" />
-            <Rect x="0" y="0" width="100%" height="100%" fill="url(#grid-dots)" />
 
             {topShade && <Rect x="0" y="0" width="100%" height="36" fill="url(#topShade)" />}
         </Svg>

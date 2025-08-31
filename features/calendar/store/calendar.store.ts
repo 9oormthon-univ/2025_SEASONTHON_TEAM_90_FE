@@ -2,7 +2,6 @@ import { create } from 'zustand';
 import type { MonthData } from '../types';
 import { toMonth, todayYMD } from '../utils/date';
 
-
 interface CalendarState {
     currentMonth: string; // YYYY-MM
     selectedDate: string; // YYYY-MM-DD
@@ -14,7 +13,6 @@ interface CalendarState {
     setMonthData: (m: string, data: MonthData) => void;
     setLoading: (v: boolean) => void;
 }
-
 
 export const useCalendarStore = create<CalendarState>((set) => ({
     currentMonth: toMonth(new Date()),

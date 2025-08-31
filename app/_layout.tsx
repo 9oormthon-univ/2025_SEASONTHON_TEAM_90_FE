@@ -2,7 +2,7 @@ import { useEffect } from "react";
 import { Stack } from "expo-router";
 import { useFonts } from "expo-font";
 import * as SplashScreen from "expo-splash-screen";
-import '../shared/global.css'
+import '../global.css'
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
 

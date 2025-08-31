@@ -6,7 +6,7 @@ const W = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
 
 const WeekdayHeader: React.FC = () => {
   return (
-    <View className="flex-row gap-[10px]">
+    <View className="flex-row gap-[13px] my-2">
       {W.map((w) => (
         <View key={w} className="items-center p-[10px] ">
           <Text className="font-choco text-[15px]" style={{ color: '#5F5548' }}>{w}</Text>

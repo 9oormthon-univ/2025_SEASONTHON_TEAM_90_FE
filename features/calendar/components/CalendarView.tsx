@@ -19,7 +19,7 @@ const CalendarView: React.FC<CalendarViewProps> = ({ variant = 'month', onSelect
 
     const handleSelect = async (ymd: string) => {
         if (ymd === today) {
-            // [추가] 오늘 루틴 조회 (페이지 이동 없이 Alert로 결과만 보여줌)
+            // 오늘 루틴 조회 (페이지 이동 없이 Alert로 결과만 보여줌)
             try {
                 const { routines, summary } = await getRoutines(today, true);
                 const msg = [
@@ -47,7 +47,7 @@ const CalendarView: React.FC<CalendarViewProps> = ({ variant = 'month', onSelect
                 <Text className="mt-2">Loading...</Text>
             ) : (
                 <View className='relative flex-1'>
-                    <GridPaper cell={24} majorEvery={5} />
+                    <GridPaper key={currentMonth} cell={24} majorEvery={5} />
                     <CalendarGrid matrix={matrix} getDayMeta={getDayMeta} onSelectDate={handleSelect} variant={variant} />
                 </View>
             )}

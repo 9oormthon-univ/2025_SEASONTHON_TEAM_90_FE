@@ -30,6 +30,10 @@ const CalendarGrid: React.FC<Props> = ({ matrix, getDayMeta, onSelectDate, varia
         }));
         return row ? [row] : matrix.slice(0, 1); // 오늘 주 없으면 1행만
     }, [matrix, variant, getDayMeta]);
+    // 모달로 띄울 시 아래 같이 사용하시면 한 행만 띄울 수 있습니다.
+    // <Modal> 
+    //     <CalendarView variant="week" />
+    // </Modal>
 
     return (
         <View className="px-[16px]">

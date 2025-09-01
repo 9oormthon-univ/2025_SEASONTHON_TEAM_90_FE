@@ -1,7 +1,7 @@
+//bottombar 코드입니다.
+
 import { Tabs } from "expo-router";
 import Colors from "@/constants/Colors";
-
-// SVG 컴포넌트 임포트
 import Home from "@/assets/icons/home.svg";
 import HomeActive from "@/assets/icons/homeclick.svg";
 import Dashboard from "@/assets/icons/dashboard.svg";
@@ -37,6 +37,9 @@ export default function TabsLayout() {
           borderTopColor: Colors.mute,
           height: 80,
         },
+        tabBarItemStyle: {
+          paddingTop: 6,
+        },
       }}
     >
       <Tabs.Screen
@@ -66,7 +69,7 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="ranking"
         options={{
-          // MVP 1단계에 랭킹 없음
+          // MVP 1단계에 랭킹 없음으로 active 사용하지 않았음.
           tabBarIcon: () => <Ranking width={32} height={32} />,
         }}
       />

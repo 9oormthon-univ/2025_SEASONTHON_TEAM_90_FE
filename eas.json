@@ -4,10 +4,20 @@
     "development": {
       "developmentClient": true,
       "distribution": "internal",
-      "channel": "preview"
+      "channel": "dev",
+      "autoIncrement": "version"
     },
-    "preview": { "distribution": "internal", "channel": "preview" },
-    "production": { "channel": "production" }
+    "preview": {
+      "distribution": "internal",
+      "channel": "preview",
+      "autoIncrement": "version"
+    },
+    "production": {
+      "channel": "production",
+      "autoIncrement": "version"
+    }
   },
-  "submit": { "production": {} }
+  "submit": {
+    "production": {}
+  }
 }

@@ -50,7 +50,7 @@ export default function TabsLayout() {
           ),
         }}
       />
-      <Tabs.Screen name="dashboard" options={{
+      <Tabs.Screen name="dashboard/index" options={{
         tabBarIcon: ({ focused } : { focused: boolean }) => (
           <TabSvg Active={DashboardActive} Inactive={Dashboard} focused={focused} />
         )

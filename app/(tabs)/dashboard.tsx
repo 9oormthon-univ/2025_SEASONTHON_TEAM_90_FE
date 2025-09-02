@@ -3,7 +3,7 @@
 import React from "react";
 import { View, Text } from "react-native";
 import Colors from "@/constants/Colors";
-import TopBar from "@/components/Common/TopBar";  //topbar 코드 입니다.
+import TopBar from "@/components/Common/TopBar"; //topbar 코드 입니다.
 
 export default function Dashboard() {
   return (

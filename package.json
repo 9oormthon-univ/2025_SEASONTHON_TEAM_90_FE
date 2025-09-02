@@ -59,6 +59,14 @@
     "tailwindcss": "^3.4.17",
     "typescript": "~5.8.3"
   },
+  "prettier": {
+    "singleQuote": false,
+    "semi": true,
+    "trailingComma": "all",
+    "printWidth": 100,
+    "tabWidth": 2,
+    "arrowParens": "always"
+  },
   "expo": {
     "doctor": {
       "reactNativeDirectoryCheck": {

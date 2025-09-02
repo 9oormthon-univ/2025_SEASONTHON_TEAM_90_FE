@@ -2,7 +2,7 @@ import { useEffect } from "react";
 import { Stack } from "expo-router";
 import { useFonts } from "expo-font";
 import * as SplashScreen from "expo-splash-screen";
-import '../global.css' // 스타일
+import "../global.css"; // 스타일
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
 
@@ -13,7 +13,7 @@ export default function RootLayout() {
   }); //폰트
 
   useEffect(() => {
-    if (fontsLoaded) SplashScreen.hideAsync().catch(() => { });
+    if (fontsLoaded) SplashScreen.hideAsync().catch(() => {});
   }, [fontsLoaded]);
 
   if (!fontsLoaded) return null;

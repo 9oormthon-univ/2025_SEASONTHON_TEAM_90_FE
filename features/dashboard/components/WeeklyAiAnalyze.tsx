@@ -1,8 +1,8 @@
-import React, { useEffect, useMemo, useState } from "react"
+import React, { useMemo} from "react"
 import { View, Text, ActivityIndicator } from "react-native";
 import { useWeeklyInsight } from "../hooks/useWeeklyInsight";
 import AnalyzeIcon from "@/features/dashboard/assets/analyze.svg";
-import type { WeeklyInsightResponse, WeeklyDashboardResponse } from "../types"
+import type { WeeklyDashboardResponse } from "../types"
 import { buildStreakMap, getStreakBadgeForHighlight } from "../utils/insight";
 import { getWeekLabel } from "../utils/date";
 
@@ -11,7 +11,7 @@ export interface WeeklyAiAnalyzeProps {
     memberId: number;
     force?: boolean;
     AnalyzingIcon?: React.ComponentType;
-    mockData?: WeeklyInsightResponse["data"];
+    // mockData?: WeeklyInsightResponse["data"];
     delayMs?: number;
     routines?: WeeklyDashboardResponse["data"]["routine_performance"];
 }
@@ -21,29 +21,22 @@ export default function WeeklyAiAnalyze({
     memberId,
     force,
     AnalyzingIcon,
-    mockData,
+    // mockData,
     delayMs = 800,
     routines,
 }: WeeklyAiAnalyzeProps) {
     const Icon = AnalyzingIcon ?? AnalyzeIcon;
 
-    const hook = useWeeklyInsight(weekStartISO, memberId, force ?? false);
-    const [mockState, setMockState] = useState<typeof hook>({ data: null, loading: !!mockData, error: null } as any);
+    const { data, loading, error } = useWeeklyInsight(weekStartISO, memberId, force ?? false);
+
+    // const hook = useWeeklyInsight(weekStartISO, memberId, force ?? false);
+    // const [mockState, setMockState] = useState<typeof hook>({ data: null, loading: !!mockData, error: null } as any);
     const weekLabel = useMemo(() => getWeekLabel(weekStartISO), [weekStartISO]);
     const streakMap = useMemo(() => buildStreakMap(routines), [routines]);
 
-    useEffect(() => {
-        if (!mockData) return;
-        setMockState({ data: null, loading: true, error: null } as any);
-        const t = setTimeout(() => {
-            setMockState({ data: mockData, loading: false, error: null } as any);
-        }, delayMs);
-        return () => clearTimeout(t);
-    }, [mockData, delayMs]);
-
-    const data = mockData ? mockState.data : hook.data;
-    const loading = mockData ? mockState.loading : hook.loading;
-    const error = mockData ? mockState.error : hook.error;
+    // const data = mockData ? mockState.data : hook.data;
+    // const loading = mockData ? mockState.loading : hook.loading;
+    // const error = mockData ? mockState.error : hook.error;
 
     return (
         <View >

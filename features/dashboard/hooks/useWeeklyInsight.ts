@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { getWeeklyInsightV1 } from "../api/dashboard.api";
 import type { WeeklyInsightResponse } from "../types";
 
-/** changed: 주간 AI 인사이트 조회 훅(v1 스웨거 반영) */
+/** 주간 AI 인사이트 조회 훅(v1 스웨거 반영) */
 export function useWeeklyInsight(weekStartISO: string, memberId: number, force = false) {
     const [data, setData] = useState<WeeklyInsightResponse["data"] | null>(null);
     const [loading, setLoading] = useState(true);

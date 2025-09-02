@@ -13,7 +13,7 @@ export async function getWeeklyDashboard(weekStartISO: string, signal?: AbortSig
     return res.data.data;
 }
 
-/** changed: 6.2 AI 인사이트 (스웨거 경로/파라미터 적용) */
+/** 6.2 AI 인사이트 (스웨거 경로/파라미터 적용) */
 export async function getWeeklyInsightV1(params: {
     weekStart: string;      // YYYY-MM-DD (월요일)
     memberId: number;       // required

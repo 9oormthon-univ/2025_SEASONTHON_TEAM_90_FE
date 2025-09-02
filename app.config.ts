@@ -1,5 +1,6 @@
+// app.config.ts
 import "dotenv/config";
-import { ExpoConfig, ConfigContext } from "expo/config";
+import type { ExpoConfig, ConfigContext } from "expo/config";
 
 export default ({ config }: ConfigContext): ExpoConfig => ({
   ...config,
@@ -9,7 +10,6 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   orientation: "portrait",
   scheme: "goorm90",
   userInterfaceStyle: "automatic",
-  newArchEnabled: true,
 
   splash: {
     resizeMode: "contain",
@@ -28,6 +28,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     },
     edgeToEdgeEnabled: true,
     package: "com.goormthon.team90",
+    versionCode: 1,
   },
 
   web: {
@@ -45,19 +46,16 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   extra: {
     router: {},
     eas: {
-      projectId: "95853990-fe91-469b-a0b0-d2570d5e6378",
+      projectId: "59dd1ee6-ecbe-48db-81b1-40318898958b",
     },
-    // 환경변수(.env) → 코드에서 process.env로 접근
     APP_ENV: process.env.APP_ENV,
     API_BASE_URL: process.env.EXPO_PUBLIC_API_BASE_URL,
     KAKAO_NATIVE_KEY: process.env.EXPO_PUBLIC_KAKAO_NATIVE_KEY,
   },
 
-  runtimeVersion: {
-    policy: "appVersion",
-  },
+  runtimeVersion: { policy: "appVersion" },
 
   updates: {
-    url: "https://u.expo.dev/95853990-fe91-469b-a0b0-d2570d5e6378",
+    url: "https://u.expo.dev/59dd1ee6-ecbe-48db-81b1-40318898958b",
   },
 });

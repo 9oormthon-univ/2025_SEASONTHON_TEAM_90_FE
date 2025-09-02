@@ -61,9 +61,7 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="my"
         options={{
-          tabBarIcon: ({ focused }) => (
-            <TabSvg Active={MyActive} Inactive={My} focused={focused} />
-          ),
+          tabBarIcon: ({ focused }) => <TabSvg Active={MyActive} Inactive={My} focused={focused} />,
         }}
       />
       <Tabs.Screen

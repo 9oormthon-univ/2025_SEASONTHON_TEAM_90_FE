@@ -1,63 +1,38 @@
 import React from 'react';
 import { View, Text, Image, TouchableOpacity } from 'react-native';
-import { useSessionStore } from '../store/session.store';
-import { socialLogin, logout } from '../api/authApi';
+import { useSessionStore } from '@/features/auth/store/session.store';
+import { loginWithKakao } from '@/features/auth/api/kakaoAuth';
 
 const ProfileCard = () => {
-    const { user, tokens, setUser, setTokens, clear } = useSessionStore();
+    const { user } = useSessionStore();
 
-    // 👉 카카오 소셜 로그인 (예: 카카오 SDK에서 받은 accessToken 사용)
     const handleLogin = async () => {
         try {
-            // TODO: 카카오 SDK 연동해서 진짜 accessToken 받아오기
-            const kakaoAccessToken = 'dummy-kakao-token';
-
-            // 서버 JWT 발급
-            const data = await socialLogin(kakaoAccessToken, 'KAKAO');
-
-            // 토큰 저장
-            setTokens({
-                accessToken: data.accessToken,
-                refreshToken: kakaoAccessToken, // 보통 refreshToken도 응답으로 내려옴 (예시)
-            });
-
-            // 유저 정보 저장 (실제는 카카오 API 호출해서 가져오는 게 안전)
-            setUser({
-                nickname: '단간방고양이',
-                profileImageUrl: 'https://placekitten.com/200/200',
-            });
-        } catch (err) {
-            console.error('로그인 실패:', err);
+            await loginWithKakao();
+        } catch (e) {
+            console.error('로그인 실패', e);
         }
     };
 
-    // 👉 로그아웃
-    const handleLogout = async () => {
-        try {
-            if (tokens?.accessToken) {
-                await logout(tokens.accessToken);
-            }
-        } catch (err) {
-            console.error('로그아웃 실패:', err);
-        } finally {
-            clear();
-        }
+    const handleEditProfile = () => {
+        // TODO: 추후 내 정보 수정 페이지로 이동
+        console.log('내 정보 수정 페이지 이동');
     };
 
     return (
         <View className="items-center mt-6">
             {/* 아바타 */}
-            <View className="w-28 h-28 rounded-full bg-white justify-center items-center shadow">
+            <View className="w-40 h-40 rounded-full bg-white justify-center items-center shadow">
                 {user?.profileImageUrl ? (
                     <Image
                         source={{ uri: user.profileImageUrl }}
-                        className="w-28 h-28 rounded-full"
+                        className="w-30 h-30 rounded-full"
                         resizeMode="cover"
                     />
                 ) : (
                     <Image
                         source={require('../assets/avatar.png')}
-                        className="w-20 h-20"
+                        className="w-40 h-25"
                         resizeMode="contain"
                     />
                 )}
@@ -68,13 +43,24 @@ const ProfileCard = () => {
                 {user?.nickname ?? '게스트'}
             </Text>
 
-            {/* 버튼 */}
+            {/* 로그인 / 내 정보 수정 버튼 */}
             <TouchableOpacity
-                className="mt-2 px-4 py-2 rounded-full bg-white shadow"
-                onPress={user ? handleLogout : handleLogin}
+                className="mt-2 px-6 py-2 rounded-full bg-white shadow-sm"
+                style={{ backgroundColor: '#F7F7F7' }}
+                onPress={user ? handleEditProfile : handleLogin}
             >
-                <Text className="text-sm text-gray-600">
-                    {user ? '로그아웃' : '카카오 로그인'}
+                <Text
+                    className="text-center"
+                    style={{
+                        fontFamily: 'Pretendard',
+                        fontWeight: '400',
+                        fontSize: 14,
+                        lineHeight: 21,
+                        letterSpacing: 0,
+                        color: '#3A332A',
+                    }}
+                >
+                    {user ? '내 정보 수정' : '카카오 로그인'}
                 </Text>
             </TouchableOpacity>
         </View>

@@ -1,3 +1,4 @@
+// 제도기 스타일(사용 안하는 걸로 변경)
 import React from "react";
 import { StyleSheet } from "react-native";
 import Svg, { Defs, Pattern, Rect, Path, LinearGradient, Stop } from "react-native-svg";

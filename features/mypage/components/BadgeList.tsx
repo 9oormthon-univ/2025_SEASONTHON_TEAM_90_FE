@@ -8,9 +8,11 @@ const BadgeList = () => {
         <View className="mt-4 flex-row justify-around">
             {badges.map((_, idx) => (
                 <View key={idx} className="items-center">
-                    <View className="w-14 h-14 rounded-full border border-gray-300 justify-center items-center">
+                    {/* 뱃지 아이콘 영역 */}
+                    <View className="w-14 h-14 rounded-full border border-gray-300 items-center justify-center">
                         <Text className="text-gray-300 text-4xl leading-none">★</Text>
                     </View>
+                    {/* 뱃지 이름 */}
                     <Text className="mt-1 text-xs text-gray-500">뱃지</Text>
                 </View>
             ))}

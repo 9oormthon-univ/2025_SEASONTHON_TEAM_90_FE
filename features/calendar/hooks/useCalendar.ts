@@ -68,7 +68,11 @@ export const useCalendar = () => {
 
   const goPrev = () => setMonth(addMonths(currentMonth, -1));
   const goNext = () => setMonth(addMonths(currentMonth, 1));
-
+  /** 오늘 이동 추가 */
+  const goToday = () => {
+    const tm = todayYMD().slice(0, 7);
+    setMonth(tm);
+  };
   const getDayMeta = (d: Date) => {
     const cached = monthCache[currentMonth];
     const ymd = `${d.getFullYear()}-${(d.getMonth() + 1).toString().padStart(2, "0")}-${d
@@ -94,5 +98,6 @@ export const useCalendar = () => {
     getDayMeta,
     goPrev,
     goNext,
+    goToday,
   } as const;
 };

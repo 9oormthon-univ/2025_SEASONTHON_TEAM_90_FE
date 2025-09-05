@@ -5,37 +5,39 @@ import { useCalendar } from "../hooks/useCalendar";
 import { todayYMD } from "../utils/date";
 import { getRoutines } from "../api/getRoutines";
 import { Alert } from "react-native";
-import GridPaper from "./GridPaper";
 
 export type CalendarViewProps = { variant?: "month" | "week" };
 /** 캘린더 컴포넌트 */
 const CalendarView: React.FC<CalendarViewProps> = ({ variant = "month" }) => {
-  const { currentMonth, isLoading, matrix, getDayMeta, goPrev, goNext } = useCalendar();
+  const { currentMonth, isLoading, matrix, getDayMeta, goPrev, goNext, goToday } = useCalendar();
   const today = todayYMD();
 
   const handleSelect = async (ymd: string) => {
-    if (ymd === today) {
+    // 문자열 비교로도 OK(YYYY-MM-DD 형식)
+    if (ymd >= today) {
       try {
-        const { routines, totalCount } = await getRoutines();
-        Alert.alert("오늘의 루틴", `총 루틴: ${totalCount}\n첫번째: ${routines[0]?.title ?? "-"}`);
+        const { routines, totalCount } = await getRoutines(ymd);
+        const first = routines[0]?.title ?? '-';
+        Alert.alert(`${ymd} 루틴`, `총 ${totalCount}개\n첫번째: ${first}`);
       } catch {
-        Alert.alert("오류", "루틴을 불러오지 못했습니다.");
+        Alert.alert('오류', `${ymd} 루틴 조회 실패`);
       }
-    } else {
-      const { useRouter } = await import("expo-router");
-      const router = useRouter();
-      router.push({ pathname: "/retrospect", params: { date: ymd } });
+      return;
     }
+    // 과거 날짜 → 회고 페이지 이동
+    const { useRouter } = await import('expo-router');
+    const router = useRouter();
+    router.push({ pathname: '/retrospect', params: { date: ymd } });
   };
 
   return (
     <View className="flex-1">
-      <MonthHeader month={currentMonth} onPrev={goPrev} onNext={goNext} />
+      <MonthHeader month={currentMonth} onPrev={goPrev} onNext={goNext} onGoToday={goToday} />
       {isLoading ? (
         <Text className="mt-2">Loading...</Text>
       ) : (
-        <View className="relative flex-1">
-          <GridPaper key={currentMonth} cell={24} majorEvery={5} />
+        <View className="relative flex-1 bg-[#f2efe6]">
+          {/* <GridPaper key={currentMonth} cell={24} majorEvery={5} /> */}
           <CalendarGrid
             matrix={matrix}
             getDayMeta={getDayMeta}

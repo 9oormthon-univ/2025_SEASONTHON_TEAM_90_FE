@@ -45,20 +45,25 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="home"
         options={{
-          tabBarIcon: ({ focused } : { focused: boolean }) => (
+          tabBarIcon: ({ focused }: { focused: boolean }) => (
             <TabSvg Active={HomeActive} Inactive={Home} focused={focused} />
           ),
         }}
       />
-      <Tabs.Screen name="dashboard/index" options={{
-        tabBarIcon: ({ focused } : { focused: boolean }) => (
-          <TabSvg Active={DashboardActive} Inactive={Dashboard} focused={focused} />
-        )
-      }} />
+      <Tabs.Screen
+        name="dashboard/index"
+        options={{
+          tabBarIcon: ({ focused }: { focused: boolean }) => (
+            <TabSvg Active={DashboardActive} Inactive={Dashboard} focused={focused} />
+          ),
+        }}
+      />
       <Tabs.Screen
         name="my"
         options={{
-          tabBarIcon: ({ focused } : { focused: boolean }) => <TabSvg Active={MyActive} Inactive={My} focused={focused} />,
+          tabBarIcon: ({ focused }: { focused: boolean }) => (
+            <TabSvg Active={MyActive} Inactive={My} focused={focused} />
+          ),
         }}
       />
       <Tabs.Screen

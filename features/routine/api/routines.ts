@@ -196,6 +196,92 @@ export async function patchRoutineTarget(
   };
 }
 
+// === PATCH: Streak/History 유틸 추가 시작 ===============================
+
+/** YYYY-MM-DD 문자열 비교 (오름차순) */
+const _cmpDate = (a: string, b: string) => a.localeCompare(b);
+
+/** 해당 날짜 기록을 없으면 추가, 있으면 갱신(idempotent) */
+function _upsertHistoryForDate(r: Routine, date: string, completed: boolean): Routine {
+  const hist = Array.isArray(r.history) ? [...r.history] : [];
+  const idx = hist.findIndex((h) => h.date && _cmpDate(h.date, date) === 0);
+
+  const rec = { date, completed, done: completed, status: completed ? "DONE" : ("FAIL" as const) };
+  if (idx >= 0) hist[idx] = rec;
+  else hist.push(rec);
+
+  // 정렬 유지(선택)
+  hist.sort((a, b) => _cmpDate(a.date, b.date));
+
+  return { ...r, history: hist };
+}
+
+/**
+ * history를 기준으로 현재 streakDays 계산
+ * - 규칙: 가장 최근 날짜부터 거꾸로 보며 연속된 "completed=true" 개수
+ * - lastAdjustAt(선택)이 있으면 그 날짜 이후만 계산 (그 이전은 무시)
+ */
+function _recomputeStreakDays(r: Routine): number {
+  const hist = Array.isArray(r.history) ? r.history : [];
+  if (hist.length === 0) return 0;
+
+  const floor = r.lastAdjustAt ?? ""; // 없으면 전체 허용
+  // 최신순으로 훑기
+  const sorted = [...hist].sort((a, b) => _cmpDate(a.date, b.date));
+  let streak = 0;
+
+  // 최근 날짜부터 역순 카운트
+  for (let i = sorted.length - 1; i >= 0; i--) {
+    const h = sorted[i];
+    if (floor && _cmpDate(h.date, floor) < 0) break; // 바닥 이전이면 끝
+    if (h.completed === true || h.done === true || h.status === "DONE" || h.status === "SUCCESS") {
+      streak += 1;
+    } else {
+      // 실패가 나오면 연속성 끊김
+      break;
+    }
+  }
+  return streak;
+}
+
+/**
+ * 회고 저장 결과를 루틴 DB에 반영
+ * - items: 해당 날짜에 사용자가 선택한 상태 스냅샷
+ * - DONE → completed=true, PARTIAL/NONE → completed=false
+ * - idempotent: 같은 날짜 다시 저장 시 기존 기록을 덮어씀
+ */
+export async function applyRetrospectResult(
+  date: string,
+  items: { id: number; status: "NONE" | "PARTIAL" | "DONE" }[],
+): Promise<void> {
+  await sleep(10);
+
+  // DB는 이 파일 상단의 모킹 배열(DB)을 사용
+  DB = DB.map((r) => {
+    const picked = items.find((it) => it.id === r.id);
+    if (!picked) return r;
+
+    const completed = picked.status === "DONE";
+    // 1) 해당 날짜 history upsert
+    let next = _upsertHistoryForDate(r, date, completed);
+
+    // 2) streak 재계산 규칙
+    //   - DONE이면 연속 +1이 되도록 전체 히스토리를 다시 계산
+    //   - PARTIAL/NONE이면 해당 날짜 false로 기록되어 일관되게 0으로 초기화됨
+    const newStreak = _recomputeStreakDays(next);
+    next = { ...next, streakDays: newStreak };
+
+    // 3) 오늘 완료 표시 보조 플래그(옵션)
+    if (_cmpDate(date, new Date().toISOString().slice(0, 10)) === 0) {
+      next.completedToday = completed;
+    }
+
+    return next;
+  });
+}
+
+// === PATCH: Streak/History 유틸 추가 끝 =================================
+
 /* ─────────────────────────────────────────────────────────────────────────────
   섹션 2) 실서버 연동 코드 (주석) — 명세서에 맞춰 즉시 사용 가능
   ⚠️ 실제 사용 시: 아래 주석을 해제하고, 상단 목 코드를 제거/분기하세요.

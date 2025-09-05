@@ -9,6 +9,7 @@ interface Props {
   month: string; // YYYY-MM
   onPrev: () => void;
   onNext: () => void;
+  onGoToday: () => void;
 }
 
 const MONTHS_EN = [
@@ -27,15 +28,17 @@ const MONTHS_EN = [
 ];
 
 /** 월 네비게이션 헤더 (UI 최소화) */
-const MonthHeader: React.FC<Props> = ({ month, onPrev, onNext }) => {
+const MonthHeader: React.FC<Props> = ({ month, onPrev, onNext, onGoToday }) => {
   const router = useRouter();
   const [y, m] = month.split("-").map((v) => parseInt(v, 10));
   const monthName = MONTHS_EN[m - 1];
   return (
     <SafeAreaView edges={["top"]} style={{ backgroundColor: "#816E57" }}>
       <View className="h-[108px] px-3 flex-row items-center justify-between">
-        {/* 로고(임시 텍스트) */}
-        <Text className="text-[18px]">로고</Text>
+        <Pressable onPress={onGoToday} accessibilityRole="button">
+          {/* 로고(임시 텍스트) */}
+          <Text className="text-[20px] font-nanum" style={{ color: "#FFE494" }}>Today</Text>
+        </Pressable>
 
         {/* 월 이동 + 타이틀(2줄) */}
         <View className="flex-row items-center gap-3">
@@ -71,7 +74,7 @@ const MonthHeader: React.FC<Props> = ({ month, onPrev, onNext }) => {
           }
           accessibilityRole="button"
         >
-          <Text className="text-[20px] font-nanum" style={{ color: "#FF9752" }}>
+          <Text className="text-[20px] font-nanum" style={{ color: "#FFE494" }}>
             오늘의회고
           </Text>
         </Pressable>

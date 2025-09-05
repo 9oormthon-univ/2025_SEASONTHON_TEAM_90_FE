@@ -1,62 +1,70 @@
 import { useMemo } from "react";
 import { View, Text } from "react-native";
-import type { WeeklyDashboardResponse } from "../types";
+import type { WeeklyDashboardData, Emotion } from "../types";
 
-import NormalIcon from "@/features/dashboard/assets/basic.svg";
-import ExitedIcon from "@/features/dashboard/assets/excited.svg";
 import GloomyIcon from "@/features/dashboard/assets/gloomy.svg";
+import NormalIcon from "@/features/dashboard/assets/basic.svg";
 import HappyIcon from "@/features/dashboard/assets/happy.svg";
+import ExitedIcon from "@/features/dashboard/assets/excited.svg";
+
 // 직선 가져오기
 import Svg, { Polyline, Defs, LinearGradient, Stop, Rect, Line } from "react-native-svg";
 
+/**WeeklyDashboardData 타입을 사용하여 props 타입을 명시 */
 export interface EmotionChangeProps {
-  daily: WeeklyDashboardResponse["data"]["daily_completion"];
+  daily: WeeklyDashboardData["daily_completion"];
 }
 
-const Point = ({ emotion }: { emotion: string }) => {
-  // 아이콘 크기 통일을 위해 width, height 지정
-  const iconSize = 40;
-  switch (emotion) {
-    case "HAPPY":
-      return <HappyIcon width={iconSize} height={iconSize} />;
-    case "NORMAL":
-      return <NormalIcon width={iconSize} height={iconSize} />;
-    case "SAD":
-      return <GloomyIcon width={iconSize} height={iconSize} />;
-    case "EXITED":
-      return <ExitedIcon width={iconSize} height={iconSize} />;
-    default:
-      return <NormalIcon width={iconSize} height={iconSize} />;
-  }
+// 아이콘과 Emotion 타입을 매핑하는 객체
+const emotionIcons: Record<Emotion, React.ComponentType<{ width: number; height: number }>> = {
+  LOW: GloomyIcon,
+  NORMAL: NormalIcon,
+  GOOD: HappyIcon,
+  VERY_GOOD: ExitedIcon,
 };
 
-// SVG Path 데이터 생성을 위한 헬퍼 함수 (부드러운 곡선)
-const createSplinePath = (points: { x: number; y: number }[]) => {
-  if (points.length < 2) return "";
-  let path = `M ${points[0].x} ${points[0].y}`;
-  for (let i = 0; i < points.length - 1; i++) {
-    const x1 = points[i].x;
-    const y1 = points[i].y;
-    const x2 = points[i + 1].x;
-    const y2 = points[i + 1].y;
-    const midX = (x1 + x2) / 2;
-    path += ` C ${midX},${y1} ${midX},${y2} ${x2},${y2}`;
-  }
-  return path;
+const Point = ({ emotion }: { emotion: Emotion }) => {
+  const Icon = emotionIcons[emotion] ?? NormalIcon;
+  return <Icon width={40} height={40} />;
 };
+
+// SVG Path 데이터 생성을 위한 헬퍼 함수 (직선으로 변경)
+// const createSplinePath = (points: { x: number; y: number }[]) => {
+//   if (points.length < 2) return "";
+//   let path = `M ${points[0].x} ${points[0].y}`;
+//   for (let i = 0; i < points.length - 1; i++) {
+//     const x1 = points[i].x;
+//     const y1 = points[i].y;
+//     const x2 = points[i + 1].x;
+//     const y2 = points[i + 1].y;
+//     const midX = (x1 + x2) / 2;
+//     path += ` C ${midX},${y1} ${midX},${y2} ${x2},${y2}`;
+//   }
+//   return path;
+// };
 
 export default function EmotionChange({ daily }: EmotionChangeProps) {
-  const TOP_RATIO = 0.48;
+  // const TOP_RATIO = 0.48;
+  const DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"] as const;
+  const ORDER = ["VERY_GOOD", "GOOD", "NORMAL", "LOW"] as const;
+
+  // 빈 데이터 방어
+  if (!daily || daily.length === 0) {
+    return (
+      <View className="px-6 py-8 bg-white rounded-xl">
+        <Text className="text-center text-[16px] text-[#3A332A]">데이터가 없어요.</Text>
+      </View>
+    );
+  }
 
   const points = useMemo(() => {
-    const order = ["EXITED", "HAPPY", "NORMAL", "SAD"] as const;
     const days = daily.slice(0, 7);
     return days.map((d, idx) => {
-      const emotionIdx = Math.max(0, order.indexOf(d.primary_emotion as any)); // 0..3
+      const idxInOrder = ORDER.indexOf(d.primary_emotion as Emotion);
+      const safeIdx = idxInOrder === -1 ? ORDER.indexOf("NORMAL") : idxInOrder; // ← fallback
       const x = (idx + 0.5) * (100 / days.length); // 각 요일 중앙
-      // y: 상단 10% ~ 하단 90% 사이에 배치(위가 값 큼)
-      const y = 90 - (emotionIdx / (order.length - 1)) * 80;
-      return { x, y, emotion: d.primary_emotion, date: d.date };
+      const y = 90 - (safeIdx / (ORDER.length - 1)) * 80; // 상단 10% ~ 하단 90%
+      return { x, y, emotion: d.primary_emotion as Emotion, date: d.date };
     });
   }, [daily]);
 
@@ -82,12 +90,12 @@ export default function EmotionChange({ daily }: EmotionChangeProps) {
               <Stop offset="100%" stopColor="#FFE8A3" />
             </LinearGradient>
           </Defs>
-
+          
           {/* 배경 전체를 그라데이션으로 채움 */}
           <Rect x="0" y="0" width="100" height="100" fill="url(#grad)" />
-
-          {/* 배경 가로 점선 (그라데이션 뒤에 위치) */}
-          {[25, 50, 75, 100].map((y) => (
+          
+          {/* 배경 가로 점선 */}
+          {[25, 50, 75, 99].map((y) => (
             <Line
               key={y}
               x1="0"

@@ -9,6 +9,7 @@ interface User {
   id?: string;
   nickname?: string;
   profileImageUrl?: string;
+  interests?: string[];   // ✅ 관심사 필드 추가
 }
 
 interface SessionState {

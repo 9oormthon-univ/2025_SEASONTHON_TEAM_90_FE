@@ -1,24 +1,32 @@
-import React from 'react';
-import { View, Text, TouchableOpacity, Image } from 'react-native';
+import React, { useEffect } from 'react';
+import { View, Button } from 'react-native';
 import { useRouter } from 'expo-router';
+import { useKakaoLogin } from '@/features/auth/api/useKakaoLogin';
 
 export default function LoginScreen() {
-    const router = useRouter();
+  const router = useRouter();
+  const { request, response, handleLogin } = useKakaoLogin();
 
-    return (
-        <View className="flex-1 justify-center items-center bg-[#F9F5EE]">
-            <Image
-                source={require('../../assets/images/logo.png')}
-                className="w-24 h-24 mb-16"
-                resizeMode="contain"
-            />
+  // ✅ response 값과 redirectUri 로그 찍기
+  useEffect(() => {
+    console.log('👉 Kakao Auth Request:', request);
+    console.log('👉 Kakao Auth Response:', response);
 
-            <TouchableOpacity
-                className="flex-row items-center bg-[#FEE500] px-6 py-4 rounded-md"
-                onPress={() => router.replace('/onboarding/purpose-select')}
-            >
-                <Text className="text-black font-medium">카카오 계정으로 시작하기</Text>
-            </TouchableOpacity>
-        </View>
-    );
+    if (response?.type === 'success') {
+      router.replace('/onboarding/purpose-select');
+    }
+  }, [response]);
+
+  return (
+    <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+      <Button
+        disabled={!request}
+        title="카카오 로그인"
+        onPress={() => {
+          console.log('👉 Login button pressed');
+          handleLogin();
+        }}
+      />
+    </View>
+  );
 }

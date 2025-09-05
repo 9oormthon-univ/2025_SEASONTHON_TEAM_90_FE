@@ -49,9 +49,13 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     eas: {
       projectId: "59dd1ee6-ecbe-48db-81b1-40318898958b",
     },
-    APP_ENV: process.env.APP_ENV,
-    API_BASE_URL: process.env.EXPO_PUBLIC_API_BASE_URL,
-    KAKAO_NATIVE_KEY: process.env.EXPO_PUBLIC_KAKAO_NATIVE_KEY,
+
+    // ✅ 주신 값으로 직접 반영
+    API_BASE_URL: "https://habiglow.duckdns.org",
+    KAKAO_NATIVE_KEY: "96d555c308d7ff5db6f4e7911c881190",
+
+    // ✅ FCM 사용 여부 (환경 변수에서 제어 가능)
+    USE_FCM: process.env.EXPO_PUBLIC_USE_FCM === "true",
   },
 
   runtimeVersion: { policy: "appVersion" },

@@ -1,16 +1,18 @@
 import React from 'react';
 import { View, Text, TouchableOpacity } from 'react-native';
-import { LogOut } from 'lucide-react-native';
+import LogoutIcon from '../assets/logout.svg';
 
-const MyPageHeader = () => {
+interface MyPageHeaderProps {
+    onPressLogout: () => void;
+}
+
+export default function MyPageHeader({ onPressLogout }: MyPageHeaderProps) {
     return (
-        <View className="flex-row justify-between items-center px-4 pt-14 pb-4 bg-[#F2EFE6]">
-            <Text className="text-lg font-semibold text-black">마이페이지</Text>
-            <TouchableOpacity onPress={() => console.log('로그아웃')}>
-                <LogOut size={20} color="#333" />
+        <View className="flex-row justify-between items-center px-6 py-3 pt-14">
+            <Text className="text-lg font-bold">마이페이지</Text>
+            <TouchableOpacity onPress={onPressLogout}>
+                <LogoutIcon width={24} height={24} />
             </TouchableOpacity>
         </View>
     );
-};
-
-export default MyPageHeader;
+}

@@ -1,11 +1,7 @@
-//bottombar 코드입니다.
-
 import { Tabs } from "expo-router";
 import Colors from "@/constants/Colors";
 import Home from "@/assets/icons/home.svg";
 import HomeActive from "@/assets/icons/homeclick.svg";
-import Dashboard from "@/assets/icons/dashboard.svg";
-import DashboardActive from "@/assets/icons/dashboardclick.svg";
 import My from "@/assets/icons/my.svg";
 import MyActive from "@/assets/icons/myclick.svg";
 import Ranking from "@/assets/icons/ranking.svg";
@@ -14,7 +10,7 @@ function TabSvg({
   Active,
   Inactive,
   focused,
-  size = 37, //
+  size = 37,
 }: {
   Active?: React.FC<any>;
   Inactive: React.FC<any>;
@@ -42,29 +38,30 @@ export default function TabsLayout() {
         },
       }}
     >
+      {/* 홈 */}
       <Tabs.Screen
         name="home"
         options={{
-          tabBarIcon: ({ focused } : { focused: boolean }) => (
+          tabBarIcon: ({ focused }: { focused: boolean }) => (
             <TabSvg Active={HomeActive} Inactive={Home} focused={focused} />
           ),
         }}
       />
-      <Tabs.Screen name="dashboard/index" options={{
-        tabBarIcon: ({ focused } : { focused: boolean }) => (
-          <TabSvg Active={DashboardActive} Inactive={Dashboard} focused={focused} />
-        )
-      }} />
+
+      {/* MY */}
       <Tabs.Screen
-        name="my"
+        name="_my"
         options={{
-          tabBarIcon: ({ focused } : { focused: boolean }) => <TabSvg Active={MyActive} Inactive={My} focused={focused} />,
+          tabBarIcon: ({ focused }: { focused: boolean }) => (
+            <TabSvg Active={MyActive} Inactive={My} focused={focused} />
+          ),
         }}
       />
+
+      {/* 랭킹 */}
       <Tabs.Screen
         name="ranking"
         options={{
-          // MVP 1단계에 랭킹 없음으로 active 사용하지 않았음.
           tabBarIcon: () => <Ranking width={32} height={32} />,
         }}
       />

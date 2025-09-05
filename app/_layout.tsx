@@ -2,7 +2,12 @@ import { useEffect } from "react";
 import { Stack } from "expo-router";
 import { useFonts } from "expo-font";
 import * as SplashScreen from "expo-splash-screen";
-import "../global.css"; // 스타일
+import "../global.css";
+import "react-native-gesture-handler";
+
+import { GestureHandlerRootView } from "react-native-gesture-handler";
+import { SafeAreaProvider } from "react-native-safe-area-context";
+import { BottomSheetModalProvider } from "@gorhom/bottom-sheet";
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
 
@@ -10,7 +15,7 @@ export default function RootLayout() {
   const [fontsLoaded] = useFonts({
     PowerChocolate: require("@/assets/fonts/PowerChocolate.otf"),
     NanumPen: require("@/assets/fonts/NanumPen.ttf"),
-  }); //폰트
+  });
 
   useEffect(() => {
     if (fontsLoaded) SplashScreen.hideAsync().catch(() => {});
@@ -18,5 +23,13 @@ export default function RootLayout() {
 
   if (!fontsLoaded) return null;
 
-  return <Stack screenOptions={{ headerShown: false }} />;
+  return (
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <SafeAreaProvider>
+        <BottomSheetModalProvider>
+          <Stack screenOptions={{ headerShown: false }} />
+        </BottomSheetModalProvider>
+      </SafeAreaProvider>
+    </GestureHandlerRootView>
+  );
 }

@@ -3,7 +3,7 @@ import MonthHeader from "./MonthHeader";
 import CalendarGrid from "./CalendarGrid";
 import { useCalendar } from "../hooks/useCalendar";
 import { todayYMD } from "../utils/date";
-import { getRoutines } from "../api/getRoutines";
+import { getRoutines } from "../../routine/api/getRoutines";
 import { Alert } from "react-native";
 
 export type CalendarViewProps = { variant?: "month" | "week" };
@@ -17,17 +17,17 @@ const CalendarView: React.FC<CalendarViewProps> = ({ variant = "month" }) => {
     if (ymd >= today) {
       try {
         const { routines, totalCount } = await getRoutines(ymd);
-        const first = routines[0]?.title ?? '-';
+        const first = routines[0]?.title ?? "-";
         Alert.alert(`${ymd} 루틴`, `총 ${totalCount}개\n첫번째: ${first}`);
       } catch {
-        Alert.alert('오류', `${ymd} 루틴 조회 실패`);
+        Alert.alert("오류", `${ymd} 루틴 조회 실패`);
       }
       return;
     }
     // 과거 날짜 → 회고 페이지 이동
-    const { useRouter } = await import('expo-router');
+    const { useRouter } = await import("expo-router");
     const router = useRouter();
-    router.push({ pathname: '/retrospect', params: { date: ymd } });
+    router.push({ pathname: "/retrospect", params: { date: ymd } });
   };
 
   return (

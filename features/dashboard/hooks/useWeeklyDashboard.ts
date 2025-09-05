@@ -1,23 +1,35 @@
 import { useEffect, useMemo, useState } from "react";
 import { getWeeklyDashboard } from "../api/dashboard.api";
-import type { WeeklyDashboardResponse } from "../types";
+import type { WeeklyDashboardData } from "../types";
 
-/** 주간 대시보드 조회 훅 */
-export function useWeeklyDashboard(weekStartISO: string) {
-  const [data, setData] = useState<WeeklyDashboardResponse["data"] | null>(null);
+/**
+ * 주간 대시보드 조회 훅
+ * @param weekStartISO 'YYYY-MM-DD' 형식의 주 시작일
+ * @param memberId 사용자 ID
+ */
+export function useWeeklyDashboard(weekStartISO: string, memberId: number) {
+  const [data, setData] = useState<WeeklyDashboardData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<unknown>(null);
 
   useEffect(() => {
+    if (!memberId || isNaN(memberId)) {
+      setLoading(false);
+      setData(null);
+      return;
+    }
+
     const ac = new AbortController();
     setLoading(true);
     setError(null);
-    getWeeklyDashboard(weekStartISO, ac.signal)
+
+    getWeeklyDashboard(weekStartISO, memberId, ac.signal)
       .then(setData)
       .catch(setError)
       .finally(() => setLoading(false));
+
     return () => ac.abort();
-  }, [weekStartISO]);
+  }, [weekStartISO, memberId]);
 
   const summary = useMemo(
     () => ({

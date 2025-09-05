@@ -1,10 +1,10 @@
 import { View, Text } from "react-native";
-import type { WeeklyDashboardResponse } from "../types";
+import type { WeeklyDashboardData } from "../types";
 
 export interface WeeklyRoutineProps {
   weekLabel: string;
   completionRate: number;
-  routines: WeeklyDashboardResponse["data"]["routine_performance"];
+    routines: WeeklyDashboardData["routine_performance"];
 }
 /**카테고리 별 컬러 */
 const barColorByName = (name: string) => {

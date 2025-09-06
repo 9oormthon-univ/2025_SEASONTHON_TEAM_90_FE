@@ -1,5 +1,4 @@
-// features/routine/components/AddRoutineModal.tsx
-import React, { useMemo, useState } from "react";
+import React, { useState } from "react";
 import {
   Modal,
   View,
@@ -26,7 +25,6 @@ const C = {
   error: "#C2410C",
 };
 
-// ▼ 드롭다운 옵션
 const CATEGORY_OPTIONS = ["운동", "학업", "기타"] as const;
 
 type Errors = Partial<
@@ -37,8 +35,8 @@ type Props = {
   visible: boolean;
   onClose: () => void;
   onSubmit: (f: AddRoutineForm) => void | Promise<void>;
-  mode?: "create" | "edit"; // ✨ 추가
-  initial?: Partial<Routine>; // ✨ 수정 초기값
+  mode?: "create" | "edit";
+  initial?: Partial<Routine>;
 };
 
 export default function AddRoutineModal({
@@ -48,7 +46,6 @@ export default function AddRoutineModal({
   mode = "create",
   initial,
 }: Props) {
-  // 초기값 주입(수정 모드 대응)
   const [title, setTitle] = useState(initial?.title ?? "");
   const [category, setCategory] = useState(initial?.category ?? "");
   const [catOpen, setCatOpen] = useState(false);
@@ -68,6 +65,7 @@ export default function AddRoutineModal({
   );
 
   const [errors, setErrors] = useState<Errors>({});
+  const [submitting, setSubmitting] = useState(false); // ✅ 중복 방지
 
   const validate = () => {
     const e: Errors = {};
@@ -83,17 +81,29 @@ export default function AddRoutineModal({
   };
 
   const submit = async () => {
+    if (submitting) {
+      console.warn("[AddRoutineModal] button blocked: already submitting");
+      return;
+    }
     if (!validate()) return;
-    await onSubmit({
-      title: title.trim(),
-      category: category.trim(),
-      growthMode,
-      goalType: growthMode ? goalType : undefined,
-      goalValue: growthMode ? Number(goalValue) : undefined,
-      growthPeriodDays: growthMode ? Number(period) : undefined,
-      growthIncrement: growthMode ? Number(increment) : undefined,
-    });
-    onClose();
+
+    try {
+      setSubmitting(true);
+      await onSubmit({
+        title: title.trim(),
+        category: category.trim(),
+        growthMode,
+        goalType: growthMode ? goalType : undefined,
+        goalValue: growthMode ? Number(goalValue) : undefined,
+        growthPeriodDays: growthMode ? Number(period) : undefined,
+        growthIncrement: growthMode ? Number(increment) : undefined,
+      });
+      onClose();
+    } catch (e: any) {
+      console.warn("[AddRoutineModal] onSubmit error", e?.response?.status, e?.response?.data || e);
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   const Field = ({
@@ -303,6 +313,7 @@ export default function AddRoutineModal({
           <View style={{ flexDirection: "row", gap: 12, marginTop: 16 }}>
             <Pressable
               onPress={submit}
+              disabled={submitting}
               style={{
                 flex: 1,
                 height: 48,
@@ -310,14 +321,16 @@ export default function AddRoutineModal({
                 backgroundColor: C.primary,
                 alignItems: "center",
                 justifyContent: "center",
+                opacity: submitting ? 0.6 : 1,
               }}
             >
               <Text style={{ color: "#fff", fontWeight: "800" }}>
-                {mode === "edit" ? "수정하기" : "추가하기"}
+                {submitting ? "추가 중..." : mode === "edit" ? "수정하기" : "추가하기"}
               </Text>
             </Pressable>
             <Pressable
               onPress={onClose}
+              disabled={submitting}
               style={{
                 flex: 1,
                 height: 48,
@@ -325,6 +338,7 @@ export default function AddRoutineModal({
                 backgroundColor: C.cancel,
                 alignItems: "center",
                 justifyContent: "center",
+                opacity: submitting ? 0.6 : 1,
               }}
             >
               <Text style={{ color: "#A1A1A1", fontWeight: "800" }}>취소</Text>

@@ -1,9 +1,7 @@
-// features/retrospect/hooks/useRetrospectPage.ts
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Alert } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { ymd, isFuture, isToday as isTodayY, isPast } from "@features/retrospect/utils";
-import { useRoutineStore } from "@features/routine/store/store";
 import { useRetrospectStore } from "@features/retrospect/store/store";
 import type { RoutineStatus } from "@features/retrospect/types";
 import type { SimpleBottomDrawerRef } from "@features/retrospect/components/SimpleBottomDrawer";
@@ -12,13 +10,6 @@ export function useRetrospectPage() {
   const router = useRouter();
   const { date: qd } = useLocalSearchParams<{ date?: string | string[] }>();
   const date = Array.isArray(qd) ? qd[0] : (qd ?? ymd());
-
-  const { routines } = useRoutineStore();
-  const getDailyRoutines = useCallback(
-    () =>
-      routines.map((r) => ({ id: r.id, title: r.title, category: (r.category ?? "기타") as any })),
-    [routines],
-  );
 
   const { data, loading, error, load, cycleStatus, setStatus, updateNote, pickMood, submit } =
     useRetrospectStore();
@@ -30,8 +21,10 @@ export function useRetrospectPage() {
       ]);
       return;
     }
-    load(date, getDailyRoutines);
-  }, [date, load, getDailyRoutines, router]);
+    // 🔧 실서버에선 서버가 해당 날짜의 루틴 목록을 함께 내려주므로
+    // getDailyRoutines 인자가 필요 없습니다.
+    load(date);
+  }, [date, load, router]);
 
   const baseMode: "view" | "edit" = useMemo(() => {
     if (!data) return "edit";
@@ -77,12 +70,23 @@ export function useRetrospectPage() {
     try {
       await Promise.resolve(submit());
       setManualEditing(false);
-    } catch {}
+    } catch (e: any) {
+      const body = e?.response?.data as { code?: string; message?: string } | undefined;
+      Alert.alert("저장 실패", body?.message ?? "네트워크 또는 서버 오류가 발생했습니다.");
+    }
   };
 
-  const onPressBack = () => router.back();
+  const onPressBack = () => {
+    try {
+      if (router.canGoBack()) router.back();
+      else router.replace("/home");
+    } catch {
+      router.replace("/home");
+    }
+  };
+
   const enableManualEdit = () => setManualEditing(true);
-  const reload = () => load(date, getDailyRoutines);
+  const reload = () => load(date);
 
   return {
     ui: {

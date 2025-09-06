@@ -5,7 +5,7 @@ import { useRouter } from "expo-router";
 import messaging from "@react-native-firebase/messaging";
 import DeviceInfo from "react-native-device-info";
 import axios from "axios";
-import notifee, { TriggerType, TimestampTrigger } from "@notifee/react-native";
+import notifee, { TriggerType, RepeatFrequency, TimestampTrigger } from "@notifee/react-native";
 
 const API_BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL!;
 
@@ -74,7 +74,7 @@ export default function NotificationSettings() {
     const morningTrigger: TimestampTrigger = {
       type: TriggerType.TIMESTAMP,
       timestamp: morning.getTime(),
-      repeatFrequency: "DAILY",
+      repeatFrequency: RepeatFrequency.DAILY, // ✅ enum 사용
     };
 
     await notifee.createTriggerNotification(
@@ -93,7 +93,7 @@ export default function NotificationSettings() {
     const eveningTrigger: TimestampTrigger = {
       type: TriggerType.TIMESTAMP,
       timestamp: evening.getTime(),
-      repeatFrequency: "DAILY",
+      repeatFrequency: RepeatFrequency.DAILY, // ✅ enum 사용
     };
 
     await notifee.createTriggerNotification(

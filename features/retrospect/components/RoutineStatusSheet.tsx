@@ -181,7 +181,7 @@ const RoutineStatusSheet = forwardRef<RoutineStatusSheetRef, Props>(({ onPick, r
   );
 
   return (
-    // ✅ 내부에 Provider 포함(포털 루트 보장)
+    // ✅ 에 Provider 포함(포털 루트 보장)
     <BottomSheetModalProvider>
       {/* 모달 경로 */}
       {!useFallback && (

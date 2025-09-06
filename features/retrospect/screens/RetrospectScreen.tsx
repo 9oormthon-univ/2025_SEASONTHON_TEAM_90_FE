@@ -1,5 +1,6 @@
 // features/retrospect/screens/RetrospectScreen.tsx
 import React from "react";
+import { useRouter } from "expo-router";
 import { View, Text, ScrollView, TextInput, Pressable, ActivityIndicator } from "react-native";
 import { useRetrospectPage } from "../hooks/useRetrospectPage";
 import RoutineTickCard from "@features/retrospect/components/RoutineTickCard";
@@ -19,6 +20,7 @@ export default function RetrospectScreen() {
     setPending,
   } = useRetrospectPage();
 
+  const router = useRouter();
   if (ui.loading) {
     return (
       <View style={{ flex: 1, alignItems: "center", justifyContent: "center" }}>
@@ -50,7 +52,7 @@ export default function RetrospectScreen() {
       {/* 헤더 */}
       <View
         style={{
-          marginTop: 12, //
+          marginTop: 40, //
           paddingHorizontal: 16,
           paddingTop: 8,
           paddingBottom: 6,
@@ -59,7 +61,7 @@ export default function RetrospectScreen() {
           justifyContent: "space-between",
         }}
       >
-        <Pressable onPress={handlers.onPressBack} hitSlop={8} style={{ padding: 4 }}>
+        <Pressable onPress={() => router.push("/home")} hitSlop={8} style={{ padding: 4 }}>
           <ArrowLeft width={22} height={22} />
         </Pressable>
 

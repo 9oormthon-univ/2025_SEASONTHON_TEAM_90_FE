@@ -1,9 +1,10 @@
-import React, { useMemo, useState } from 'react';
+import React, { JSX, useMemo, useState } from 'react';
 import { View, Text, TextInput, Pressable, ActivityIndicator, Alert } from 'react-native';
 import { router } from 'expo-router';
 import { devMockLogin } from '@/features/login/api/login';
 import { useAuthStore } from '@/features/login/store/auth.store';
 import { validateEmail } from '@/features/login/utils/validateEmail';
+import { setAccessToken, setRefreshToken } from '@/shared/api/client';
 
 import HabiGlow from '../assets/HabiGlow.svg';
 import Logo from '../assets/logo.svg';
@@ -13,7 +14,7 @@ import Logo from '../assets/logo.svg';
  * - 실제 요청: 이메일만 전송
  */
 
-export default function LoginPage() {
+export default function LoginPage(): JSX.Element {
     const setTokens = useAuthStore((s) => s.setTokens);
 
     const [email, setEmail] = useState('');
@@ -24,15 +25,23 @@ export default function LoginPage() {
     const disabled = loading || !emailValid;
 
     const onSubmit = async () => {
-        if (!emailValid) {
+        if (loading) return; // CHANGED: 더블 탭 가드
+        const trimmed = email.trim(); // CHANGED: 공백 제거
+
+        if (!validateEmail(trimmed)) {
             Alert.alert('이메일 형식이 올바르지 않습니다.');
             return;
         }
+
         try {
             setLoading(true);
-            const res = await devMockLogin({ email });
-            const token = res.accessToken;
-            setTokens({ accessToken: token });
+
+            const res = await devMockLogin({ email: trimmed });
+
+            await setAccessToken(res.accessToken ?? null);
+            await setRefreshToken((res as any)?.refreshToken ?? null);
+
+            setTokens({ accessToken: res.accessToken ?? '' });
 
             router.replace('/(tabs)/home');
         } catch (e: any) {
@@ -41,6 +50,7 @@ export default function LoginPage() {
             setLoading(false);
         }
     };
+
 
     return (
         <View className="justify-center flex-1 p-6 bg-[#F2EFE6]">

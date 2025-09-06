@@ -1,12 +1,12 @@
-import React from 'react';
+import React, { JSX, useState } from 'react';
 import { View, Text, Image, TouchableOpacity } from 'react-native';
 import { useSessionStore } from '@/features/auth/store/session.store';
-import { useMockLogin } from '@/features/auth/api/useMockLogin';
+import { devMockLogin, LoginResponse } from '@/features/login/api/login'; // ✅ LoginResponse import
 import { useRouter } from 'expo-router';
 
-const ProfileCard = () => {
+const ProfileCard = (): JSX.Element => {
   const { user } = useSessionStore();
-  const { handleMockLogin } = useMockLogin();
+  const [email, setEmail] = useState('test@example.com'); // ✅ 기본 테스트용 이메일
   const router = useRouter();
 
   const handleEditProfile = () => {
@@ -14,20 +14,27 @@ const ProfileCard = () => {
   };
 
   const handleMockLoginAndNavigate = async () => {
-    const ok = await handleMockLogin();
-    if (ok) {
-      router.push('/(tabs)/_my/EditProfileScreen');
+    try {
+      // ✅ devMockLogin 호출, LoginResponse 타입 보장
+      const res: LoginResponse = await devMockLogin({ email });
+
+      if (res?.accessToken) {
+        console.log('✅ Mock 로그인 성공:', res.accessToken);
+        router.push('/(tabs)/_my/EditProfileScreen');
+      }
+    } catch (e) {
+      console.error('❌ Mock 로그인 실패:', e);
     }
   };
 
   return (
     <View className="items-center mt-6">
       {/* 아바타 */}
-      <View className="w-40 h-40 rounded-full bg-white justify-center items-center shadow">
+      <View className="items-center justify-center w-40 h-40 bg-white rounded-full shadow">
         {user?.profileImageUrl ? (
           <Image
             source={{ uri: user.profileImageUrl }}
-            className="w-30 h-30 rounded-full"
+            className="rounded-full w-30 h-30"
             resizeMode="cover"
           />
         ) : (
@@ -39,14 +46,14 @@ const ProfileCard = () => {
         )}
       </View>
 
-      {/* 닉네임 (없으면 name 사용) */}
+      {/* 닉네임 */}
       <Text className="mt-3 text-lg font-semibold text-black">
         {user?.nickname ?? user?.name ?? '게스트'}
       </Text>
 
       {/* 로그인 / 내 정보 수정 버튼 */}
       <TouchableOpacity
-        className="mt-2 px-6 py-2 rounded-full bg-white shadow-sm"
+        className="px-6 py-2 mt-2 bg-white rounded-full shadow-sm"
         style={{ backgroundColor: '#F7F7F7' }}
         onPress={user ? handleEditProfile : handleMockLoginAndNavigate}
       >

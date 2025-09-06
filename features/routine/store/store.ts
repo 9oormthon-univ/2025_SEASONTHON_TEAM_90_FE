@@ -1,17 +1,4 @@
-import { useEffect } from "react";
-import { useRoutineStore } from "../store/store";
-
-export const useRoutines = () => {
-  const { routines, loading, error, load, create, toggleComplete } = useRoutineStore();
-
-  useEffect(() => {
-    if (!routines.length) void load();
-  }, [routines.length, load]);
-
-  return { routines, loading, error, create, toggleComplete, reload: load };
-};
-// features/routine/store/routine.store.ts
-
+// features/routine/store/store.ts
 import { create } from "zustand";
 import {
   addRoutineApi,
@@ -26,9 +13,10 @@ type State = {
   routines: Routine[];
   loading: boolean;
   error?: string;
-  creating?: boolean; // ✅ 생성 중
-  mutatingId?: number | null; // 수정/완료 중
-  deletingId?: number | null; // 삭제 중
+  creating: boolean; // 생성 중
+  mutatingId: number | null; // 수정/완료 중
+  deletingId: number | null; // 삭제 중
+  hasLoaded: boolean; // 최초 로드 여부
 };
 
 type Actions = {
@@ -39,6 +27,7 @@ type Actions = {
   toggleComplete: (id: number) => Promise<void>;
 };
 
+// 유틸
 const byId = (arr: Routine[], id: number) => arr.find((r) => Number(r.id) === Number(id));
 const replace = (arr: Routine[], id: number, patch: Partial<Routine>) =>
   arr.map((r) => (Number(r.id) === Number(id) ? { ...r, ...patch } : r));
@@ -51,18 +40,31 @@ export const useRoutineStore = create<State & Actions>((set, get) => ({
   creating: false,
   mutatingId: null,
   deletingId: null,
+  hasLoaded: false,
 
   // ===== LOAD ================================================================
   load: async () => {
+    const { loading, hasLoaded } = get();
+    if (loading) {
+      console.log("[RoutineStore] load:skip (already loading)");
+      return;
+    }
+    // 이미 한 번 로딩 완료 + 데이터가 있으면 스킵(원하면 주석 처리)
+    if (hasLoaded && get().routines.length > 0) {
+      console.log("[RoutineStore] load:skip (already loaded)");
+      return;
+    }
+
     console.log("[RoutineStore] load:start");
     set({ loading: true, error: undefined });
     try {
       const rows = await fetchRoutines();
       console.log("[RoutineStore] load:success", { count: rows.length });
-      set({ routines: rows });
-    } catch (e: any) {
-      console.warn("[RoutineStore] load:error", e?.response?.status, e?.response?.data || e);
-      set({ error: "루틴을 불러오지 못했습니다." });
+      set({ routines: rows, hasLoaded: true });
+    } catch (e: unknown) {
+      const anyE = e as any;
+      console.warn("[RoutineStore] load:error", anyE?.response?.status, anyE?.response?.data || e);
+      set({ error: "루틴을 불러오지 못했습니다.", hasLoaded: true });
     } finally {
       set({ loading: false });
       console.log("[RoutineStore] load:end");
@@ -82,9 +84,10 @@ export const useRoutineStore = create<State & Actions>((set, get) => ({
       console.log("[RoutineStore] create:api:success", { id: created?.id, created });
       set((s) => ({ routines: [created, ...s.routines] }));
       console.log("[RoutineStore] create:success");
-    } catch (e: any) {
-      const status = e?.response?.status;
-      const payload = e?.response?.data;
+    } catch (e: unknown) {
+      const anyE = e as any;
+      const status = anyE?.response?.status;
+      const payload = anyE?.response?.data;
       console.warn("[RoutineStore] create:error", status, payload || e);
       if (status === 401) console.warn("[RoutineStore] hint → 토큰 만료/누락 여부 확인");
       if (status === 409) console.warn("[RoutineStore] hint → DUPLICATE_ROUTINE_TITLE 가능");
@@ -102,6 +105,7 @@ export const useRoutineStore = create<State & Actions>((set, get) => ({
     const prev = get().routines;
     console.log("[RoutineStore] update:start", { id, form });
 
+    // 낙관적 반영
     set({
       routines: replace(prev, id, form as Partial<Routine>),
       mutatingId: id,
@@ -116,8 +120,13 @@ export const useRoutineStore = create<State & Actions>((set, get) => ({
         mutatingId: null,
       }));
       console.log("[RoutineStore] update:success", { id });
-    } catch (e: any) {
-      console.warn("[RoutineStore] update:error", e?.response?.status, e?.response?.data || e);
+    } catch (e: unknown) {
+      const anyE = e as any;
+      console.warn(
+        "[RoutineStore] update:error",
+        anyE?.response?.status,
+        anyE?.response?.data || e,
+      );
       set({ routines: prev, mutatingId: null, error: "루틴 수정 실패" });
       throw e;
     } finally {
@@ -130,14 +139,20 @@ export const useRoutineStore = create<State & Actions>((set, get) => ({
     const prev = get().routines;
     console.log("[RoutineStore] remove:start", { id });
 
+    // 낙관적 삭제
     set({ routines: drop(prev, id), deletingId: id, error: undefined });
 
     try {
       await deleteRoutineApi(id);
       console.log("[RoutineStore] remove:success", { id });
       set({ deletingId: null });
-    } catch (e: any) {
-      console.warn("[RoutineStore] remove:error", e?.response?.status, e?.response?.data || e);
+    } catch (e: unknown) {
+      const anyE = e as any;
+      console.warn(
+        "[RoutineStore] remove:error",
+        anyE?.response?.status,
+        anyE?.response?.data || e,
+      );
       set({ routines: prev, deletingId: null, error: "루틴 삭제 실패" });
       throw e;
     } finally {
@@ -156,6 +171,7 @@ export const useRoutineStore = create<State & Actions>((set, get) => ({
     const nextCompleted = !target.completedToday;
     console.log("[RoutineStore] toggleComplete:start", { id, nextCompleted });
 
+    // 낙관적 반영
     set({
       routines: replace(prev, id, { completedToday: nextCompleted }),
       mutatingId: id,
@@ -163,115 +179,27 @@ export const useRoutineStore = create<State & Actions>((set, get) => ({
     });
 
     try {
-      await completeRoutineApi(id);
-      console.log("[RoutineStore] toggleComplete:success", { id, completedToday: nextCompleted });
-      set({ mutatingId: null });
-    } catch (e: any) {
+      // 서버가 완료/취소 토글을 모두 허용한다고 가정
+      const saved = await completeRoutineApi(id);
+      console.log("[RoutineStore] toggleComplete:api:success", { id, saved });
+      // 서버 응답에 완료상태가 들어오면 반영, 없으면 낙관값 유지
+      const patch: Partial<Routine> =
+        saved && typeof saved.completedToday === "boolean"
+          ? { completedToday: saved.completedToday }
+          : { completedToday: nextCompleted };
+      set((s) => ({ routines: replace(s.routines, id, patch), mutatingId: null }));
+      console.log("[RoutineStore] toggleComplete:success", { id });
+    } catch (e: unknown) {
+      const anyE = e as any;
       console.warn(
         "[RoutineStore] toggleComplete:error",
-        e?.response?.status,
-        e?.response?.data || e,
+        anyE?.response?.status,
+        anyE?.response?.data || e,
       );
+      // 롤백
       set({ routines: prev, mutatingId: null, error: "완료 상태 변경 실패" });
     } finally {
       console.log("[RoutineStore] toggleComplete:end", { id });
     }
   },
-}));
-// features/routine/types.ts
-
-export type GoalType = "count" | "time";
-
-export type RoutineHistoryItem = {
-  date: string; // "yyyy-MM-dd" 또는 ISO
-  completed?: boolean; // true=성공, false=실패
-  done?: boolean; // 호환
-  status?: "DONE" | "SUCCESS" | "FAIL" | string; // 호환
-};
-
-export type Routine = {
-  id: number;
-  title: string;
-  category: string;
-
-  // 성장 모드
-  growthMode?: boolean;
-  goalType?: GoalType; // count=회, time=분
-  goalValue?: number; // 현재 목표(회/분)
-  growthPeriodDays?: number; // N일(연속 기준)
-  growthIncrement?: number; // 증감 수치(회/분)
-
-  // 사이클 기준점(이 이후부터 연속 계산)
-  lastAdjustAt?: string; // ISO
-
-  // UI 보조(옵션)
-  subtitleHint?: string;
-  streakDays?: number;
-
-  // 히스토리
-  history?: RoutineHistoryItem[];
-  completedToday?: boolean;
-};
-
-/** 루틴 추가/수정 폼 */
-export type AddRoutineForm = {
-  title: string;
-  category: string;
-  growthMode: boolean;
-  goalType?: GoalType;
-  goalValue?: number;
-  growthPeriodDays?: number;
-  growthIncrement?: number;
-  lastAdjustAt?: string;
-};
-// features/common/PopupHost.tsx
-import React from "react";
-import { usePopupQueue } from "./popupQueue";
-
-export default function PopupHost() {
-  // 개별 selector로 분리하면 디버깅도 쉬움
-  const current = usePopupQueue((s) => s.current);
-  const dismiss = usePopupQueue((s) => s.dismiss);
-
-  if (!current) return null;
-  return current.render(dismiss);
-}
-// features/common/popupQueue.ts
-import { create } from "zustand";
-import { nanoid } from "nanoid/non-secure";
-import type { ReactElement } from "react";
-
-export type PopupItem = {
-  id: string;
-  render: (dismiss: () => void) => ReactElement | null;
-};
-
-type PopupQueueState = {
-  queue: PopupItem[];
-  current: PopupItem | null;
-  enqueue: (render: PopupItem["render"]) => string;
-  dismiss: () => void;
-  clear: () => void;
-};
-
-export const usePopupQueue = create<PopupQueueState>((set, get) => ({
-  queue: [],
-  current: null,
-  enqueue: (render) => {
-    const id = nanoid();
-    const item: PopupItem = { id, render };
-    const { current, queue } = get();
-    if (!current) set({ current: item });
-    else set({ queue: [...queue, item] });
-    return id;
-  },
-  dismiss: () => {
-    const { queue } = get();
-    if (queue.length === 0) set({ current: null });
-    else {
-      const [next, ...rest] = queue;
-      set({ current: next, queue: rest });
-    }
-  },
-  clear: () => set({ queue: [], current: null }),
 }));

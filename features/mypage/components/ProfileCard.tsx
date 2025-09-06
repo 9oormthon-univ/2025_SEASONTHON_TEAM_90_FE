@@ -1,28 +1,41 @@
 import React from 'react';
 import { View, Text, Image, TouchableOpacity } from 'react-native';
 import { useSessionStore } from '@/features/auth/store/session.store';
-import { useMockLogin } from '@/features/auth/api/useMockLogin';
 import { useRouter } from 'expo-router';
+import client, { setAccessToken, setRefreshToken } from '@/shared/api/client';
 
 const ProfileCard = () => {
-  const { user } = useSessionStore();
-  const { handleMockLogin } = useMockLogin();
+  const { user, setUser } = useSessionStore();
   const router = useRouter();
 
   const handleEditProfile = () => {
     router.push('/(tabs)/_my/EditProfileScreen');
   };
 
-  const handleMockLoginAndNavigate = async () => {
-    const ok = await handleMockLogin();
-    if (ok) {
+  const handleMockLogin = async () => {
+    try {
+      const res = await client.post('/api/dev/auth/mock-login', {
+        email: 'test@example.com',
+        name: '테스트유저',
+        socialType: 'KAKAO',
+        mockSocialId: 'mock_user_001',
+      });
+
+      const { accessToken, refreshToken } = res.data.data;
+      await setAccessToken(accessToken);
+      await setRefreshToken(refreshToken);
+
+      const me = await client.get('/api/members/me');
+      setUser(me.data);
+
       router.push('/(tabs)/_my/EditProfileScreen');
+    } catch (err) {
+      console.error('❌ Mock 로그인 실패:', err);
     }
   };
 
   return (
     <View className="items-center mt-6">
-      {/* 아바타 */}
       <View className="w-40 h-40 rounded-full bg-white justify-center items-center shadow">
         {user?.profileImageUrl ? (
           <Image
@@ -39,16 +52,14 @@ const ProfileCard = () => {
         )}
       </View>
 
-      {/* 닉네임 (없으면 name 사용) */}
       <Text className="mt-3 text-lg font-semibold text-black">
         {user?.nickname ?? user?.name ?? '게스트'}
       </Text>
 
-      {/* 로그인 / 내 정보 수정 버튼 */}
       <TouchableOpacity
         className="mt-2 px-6 py-2 rounded-full bg-white shadow-sm"
         style={{ backgroundColor: '#F7F7F7' }}
-        onPress={user ? handleEditProfile : handleMockLoginAndNavigate}
+        onPress={user ? handleEditProfile : handleMockLogin}
       >
         <Text
           className="text-center"

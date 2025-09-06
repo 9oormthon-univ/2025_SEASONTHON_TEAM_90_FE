@@ -1,66 +1,82 @@
-import React, { useState } from "react";
-import { View, Text, Switch, Platform } from "react-native";
+import React, { useState, useEffect } from "react";
+import { View, Text, Switch, Platform, Alert } from "react-native";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import TopBar from "@/components/Common/TopBar";
 import { useRouter } from "expo-router";
-// import messaging from "@react-native-firebase/messaging";  // 🚫 Expo Go에서는 동작 안 함
-// import DeviceInfo from "react-native-device-info";
-// import axios from "axios";
+import messaging from "@react-native-firebase/messaging";
+import DeviceInfo from "react-native-device-info";
+import axios from "axios";
 
-// const API_BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL!;
+const API_BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL!;
 
 export default function NotificationSettings() {
   const router = useRouter();
 
   const [pushEnabled, setPushEnabled] = useState(false);
-  const [reminderEnabled, setReminderEnabled] = useState(true);
+  const [fcmToken, setFcmToken] = useState<string | null>(null);
 
-  // 🚫 FCM 관련 로직 주석 처리
-  // const [fcmToken, setFcmToken] = useState<string | null>(null);
+  // ✅ 앱 시작 시 FCM 초기화
+  useEffect(() => {
+    const initFCM = async () => {
+      try {
+        // 1) 알림 권한 요청
+        const authStatus = await messaging().requestPermission();
+        const enabled =
+          authStatus === messaging.AuthorizationStatus.AUTHORIZED ||
+          authStatus === messaging.AuthorizationStatus.PROVISIONAL;
 
-  // useEffect(() => {
-  //   const initFCM = async () => {
-  //     const authStatus = await messaging().requestPermission();
-  //     const enabled =
-  //       authStatus === messaging.AuthorizationStatus.AUTHORIZED ||
-  //       authStatus === messaging.AuthorizationStatus.PROVISIONAL;
+        if (!enabled) {
+          Alert.alert("알림 권한이 거부되었습니다.");
+          return;
+        }
 
-  //     if (!enabled) {
-  //       Alert.alert("알림 권한이 거부되었습니다.");
-  //       return;
-  //     }
+        // 2) 토큰 발급
+        const token = await messaging().getToken();
+        const deviceId = DeviceInfo.getUniqueId();
+        setFcmToken(token);
 
-  //     const token = await messaging().getToken();
-  //     const deviceId = DeviceInfo.getUniqueId();
-  //     setFcmToken(token);
+        // 3) 서버 등록
+        await axios.post(`${API_BASE_URL}/api/notifications/tokens`, {
+          token,
+          deviceId,
+        });
+        setPushEnabled(true);
+        console.log("✅ 토큰 등록 완료:", token);
+      } catch (err) {
+        console.error("❌ FCM 초기화 실패:", err);
+      }
+    };
 
-  //     try {
-  //       await axios.post(`${API_BASE_URL}/api/notifications/tokens`, {
-  //         token,
-  //         deviceId,
-  //       });
-  //       setPushEnabled(true);
-  //       console.log("✅ 토큰 등록 완료:", token);
-  //     } catch (err) {
-  //       console.error("❌ 토큰 등록 실패:", err);
-  //     }
-  //   };
+    initFCM();
+  }, []);
 
-  //   initFCM();
-  // }, []);
-
-  // 스위치 제어 (🚫 지금은 단순 상태 토글만)
-  const togglePush = (value: boolean) => {
+  // ✅ 스위치로 푸시 알림 on/off
+  const togglePush = async (value: boolean) => {
     setPushEnabled(value);
-    console.log("푸시 알림 (mock):", value);
+    if (value) {
+      // 알림 켜기 → 토큰 다시 등록
+      if (fcmToken) {
+        const deviceId = DeviceInfo.getUniqueId();
+        await axios.post(`${API_BASE_URL}/api/notifications/tokens`, {
+          token: fcmToken,
+          deviceId,
+        });
+        console.log("✅ 푸시 알림 활성화:", fcmToken);
+      }
+    } else {
+      // 알림 끄기 → 토큰 비활성화
+      if (fcmToken) {
+        await axios.delete(`${API_BASE_URL}/api/notifications/tokens/${fcmToken}`);
+        console.log("❌ 푸시 알림 비활성화:", fcmToken);
+      }
+    }
   };
 
-  // --- 이하 UI 부분 (리마인드 시간은 로컬 상태만) ---
+  // --- 이하 UI 부분 ---
   const [morningStart, setMorningStart] = useState(new Date(2025, 0, 1, 8, 0));
   const [morningEnd, setMorningEnd] = useState(new Date(2025, 0, 1, 10, 0));
   const [afternoonStart, setAfternoonStart] = useState(new Date(2025, 0, 1, 14, 0));
   const [afternoonEnd, setAfternoonEnd] = useState(new Date(2025, 0, 1, 20, 0));
-
   const [showPicker, setShowPicker] = useState(false);
   const [pickerTarget, setPickerTarget] = useState<
     "morningStart" | "morningEnd" | "afternoonStart" | "afternoonEnd" | null

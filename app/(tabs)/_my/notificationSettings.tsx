@@ -5,16 +5,18 @@ import { useRouter } from "expo-router";
 import messaging from "@react-native-firebase/messaging";
 import DeviceInfo from "react-native-device-info";
 import axios from "axios";
+import notifee, { TriggerType, TimestampTrigger } from "@notifee/react-native";
 
 const API_BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL!;
 
+// 기기 고유 ID (앱 재설치해도 유지)
 async function getPermanentDeviceId() {
   if (Platform.OS === "android") {
-    return await DeviceInfo.getAndroidId();   // ✅ 앱 재설치해도 유지
+    return await DeviceInfo.getAndroidId();
   } else if (Platform.OS === "ios") {
-    return await DeviceInfo.getVendorId();    // ✅ 앱 재설치해도 유지
+    return await DeviceInfo.getVendorId();
   } else {
-    return DeviceInfo.getUniqueId();          // fallback
+    return DeviceInfo.getUniqueId();
   }
 }
 
@@ -41,7 +43,7 @@ export default function NotificationSettings() {
         const token = await messaging().getToken();
         setFcmToken(token);
 
-        // ✅ 앱 재설치해도 변하지 않는 기기 고유 ID
+        // ✅ 기기 고유 ID
         const deviceId = await getPermanentDeviceId();
 
         // ✅ 서버 등록
@@ -60,6 +62,50 @@ export default function NotificationSettings() {
     initFCM();
   }, []);
 
+  // ✅ 알림 예약 (아침 8시, 저녁 10시)
+  const scheduleDailyNotifications = async () => {
+    const now = new Date();
+
+    // 아침 8시
+    const morning = new Date(now);
+    morning.setHours(8, 0, 0, 0);
+    if (morning <= now) morning.setDate(morning.getDate() + 1);
+
+    const morningTrigger: TimestampTrigger = {
+      type: TriggerType.TIMESTAMP,
+      timestamp: morning.getTime(),
+      repeatFrequency: "DAILY",
+    };
+
+    await notifee.createTriggerNotification(
+      {
+        title: "굿모닝 ☀️",
+        body: "아침 8시 알림입니다!",
+      },
+      morningTrigger
+    );
+
+    // 저녁 10시
+    const evening = new Date(now);
+    evening.setHours(22, 0, 0, 0);
+    if (evening <= now) evening.setDate(evening.getDate() + 1);
+
+    const eveningTrigger: TimestampTrigger = {
+      type: TriggerType.TIMESTAMP,
+      timestamp: evening.getTime(),
+      repeatFrequency: "DAILY",
+    };
+
+    await notifee.createTriggerNotification(
+      {
+        title: "굿나잇 🌙",
+        body: "저녁 10시 알림입니다!",
+      },
+      eveningTrigger
+    );
+  };
+
+  // ✅ 스위치 on/off
   const togglePush = async (value: boolean) => {
     setPushEnabled(value);
     if (value) {
@@ -70,11 +116,17 @@ export default function NotificationSettings() {
           deviceId,
         });
         console.log("✅ 푸시 알림 활성화:", fcmToken);
+
+        // 알림 스케줄링 실행
+        await scheduleDailyNotifications();
       }
     } else {
       if (fcmToken) {
         await axios.delete(`${API_BASE_URL}/api/notifications/tokens/${fcmToken}`);
         console.log("❌ 푸시 알림 비활성화:", fcmToken);
+
+        // notifee의 예약 알림 취소
+        await notifee.cancelAllNotifications();
       }
     }
   };

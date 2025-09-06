@@ -1,41 +1,81 @@
-// import type { WeeklyDashboardResponse, WeeklyInsightResponse } from "../types";
+import { addDays, format } from "date-fns";
+import type { WeeklyDashboardData, WeeklyInsightData, Emotion } from "../types";
 
-// export const mockWeekStart = "2024-08-26";
-// export const mockFirstWeek = "2024-08-12";
-// export const mockCurrentWeek = "2024-09-02";
+const EMOTIONS: Emotion[] = ["LOW", "NORMAL", "GOOD", "VERY_GOOD"];
 
-// export const mockWeeklyDashboard: WeeklyDashboardResponse["data"] = {
-//     period: { start_date: "2024-08-26", end_date: "2024-09-01", label: "이번 주" },
-//     metrics: {
-//         record_rate: 85.7,
-//         completion_rate: 73,
-//         partial_achievement_rate: 14.3,
-//         current_streak: 3,
-//         max_streak_this_period: 5,
-//     },
-//     // changed: ANGRY 제거
-//     emotion_distribution: { HAPPY: 3, NORMAL: 3, SAD: 1, EXITED: 0 },
-//     daily_completion: [
-//         { date: "2024-08-26", completion_rate: 100, partial_rate: 0, primary_emotion: "HAPPY" },
-//         { date: "2024-08-27", completion_rate: 60, partial_rate: 10, primary_emotion: "NORMAL" },
-//         { date: "2024-08-28", completion_rate: 70, partial_rate: 20, primary_emotion: "HAPPY" },
-//         { date: "2024-08-29", completion_rate: 80, partial_rate: 10, primary_emotion: "SAD" },
-//         { date: "2024-08-30", completion_rate: 60, partial_rate: 20, primary_emotion: "EXITED" },
-//         { date: "2024-08-31", completion_rate: 80, partial_rate: 0, primary_emotion: "HAPPY" },
-//         { date: "2024-09-01", completion_rate: 50, partial_rate: 10, primary_emotion: "NORMAL" },
-//     ],
-//     routine_performance: [
-//         { routine_id: 101, routine_name: "건강", completion_rate: 85, average_achievement: 7.2, target_value: 8, streak: 3 },
-//         { routine_id: 102, routine_name: "공부", completion_rate: 67, average_achievement: 4.7, target_value: 7, streak: 2 },
-//         { routine_id: 103, routine_name: "운동", completion_rate: 74, average_achievement: 5.1, target_value: 7, streak: 1 },
-//     ],
-// };
+function pickEmotion(i: number): Emotion {
+    return EMOTIONS[i % EMOTIONS.length];
+}
 
-// export const mockWeeklyInsight: WeeklyInsightResponse["data"] = {
-//     summary: "이번 주 기록률 85.7%로 지난주보다 10% 향상!",
-//     highlights: ["물 마시기 3일 연속 완주", "운동 달성률 70% 유지"],
-//     suggestions: [
-//         { pattern: "월요일 기록률 낮음", suggestion: "월요일 목표를 조금 낮춰 시작해보세요.", tone: "gentle" },
-//     ],
-//     generated_at: "2024-08-27T23:00:00Z",
-// };
+/** 주간 대시보드 더미 (weekStartISO 기준 생성) */
+export function mockWeeklyDashboard(weekStartISO: string): WeeklyDashboardData {
+    const start = new Date(weekStartISO);
+    const end = addDays(start, 6);
+
+    const daily = Array.from({ length: 7 }).map((_, i) => {
+        const d = addDays(start, i);
+        const em = pickEmotion(i);
+        return {
+            date: format(d, "yyyy-MM-dd"),
+            completion_rate: Math.max(50, 85 - i * 3),
+            partial_rate: Math.min(30, 5 + i * 3),
+            primary_emotion: em,
+            // 참고: 점수 기반 API 대응 테스트용 (있어도 되고 없어도 됨)
+            // primary_emotion_score: 25 + i * 10,
+        };
+    });
+
+    // 감정 분포 카운팅
+    const emotion_distribution: Partial<Record<Emotion, number>> = {};
+    for (const d of daily) {
+        emotion_distribution[d.primary_emotion] =
+            (emotion_distribution[d.primary_emotion] ?? 0) + 1;
+    }
+
+    return {
+        period: {
+            start_date: format(start, "yyyy-MM-dd"),
+            end_date: format(end, "yyyy-MM-dd"),
+            label: "시연 주차",
+        },
+        metrics: {
+            record_rate: 88,
+            completion_rate: 74,
+            partial_achievement_rate: 12,
+            current_streak: 4,
+            max_streak_this_period: 5,
+        },
+        emotion_distribution,
+        daily_completion: daily,
+        routine_performance: [
+            { routine_id: 1, routine_name: "아침 러닝", completion_rate: 86, average_achievement: 0.82, target_value: 1, streak: 3 },
+            { routine_id: 2, routine_name: "물 2L", completion_rate: 78, average_achievement: 0.76, target_value: 1, streak: 5 },
+            { routine_id: 3, routine_name: "독서", completion_rate: 72, average_achievement: 0.61, target_value: 1, streak: 2 },
+        ],
+    };
+}
+
+/** 주간 AI 인사이트 더미 */
+export function mockWeeklyInsight(_weekStartISO: string): WeeklyInsightData {
+    return {
+        summary: "이번 주는 전반적으로 안정적이에요. 특히 수·목에 집중력이 좋았어요!",
+        highlights: [
+            "수요일 완료율 최고치 갱신",
+            "아침 루틴(러닝) 꾸준함 유지",
+            "주말엔 휴식 위주 패턴",
+        ],
+        suggestions: [
+            {
+                pattern: "목·금 피로 누적",
+                suggestion: "금요일 저녁 루틴 강도를 10% 낮춰보세요.",
+                tone: "gentle",
+            },
+            {
+                pattern: "물 섭취량 주중 후반 감소",
+                suggestion: "오후 3시에 물 마시기 알림을 켜보세요.",
+                tone: "neutral",
+            },
+        ],
+        generated_at: new Date().toISOString(),
+    };
+}

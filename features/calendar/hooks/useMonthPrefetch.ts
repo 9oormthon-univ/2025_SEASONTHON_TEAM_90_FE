@@ -25,9 +25,9 @@ export const useMonthPrefetch = (baseMonth: string) => {
       if (monthCache[m]) return;
       try {
         // === [REAL API] ===
-        const monthly: MonthlySuccessRateDto = await getMonthlySuccessRate(m); // [changed]
+        // const monthly: MonthlySuccessRateDto = await getMonthlySuccessRate(m); // [changed]
         // === [MOCK 참고용] ===
-        // const monthly = await getMonthlySuccessRateMock(m);
+        const monthly = await getMonthlySuccessRate(m);
 
         const days: MonthData["days"] = {};
         monthly.daily_success_rates.forEach((d) => {

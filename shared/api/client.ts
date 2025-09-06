@@ -62,6 +62,7 @@ client.interceptors.request.use(async (config) => {
   if (token) {
     config.headers = config.headers ?? {};
     (config.headers as any).Authorization = `Bearer ${token}`;
+    console.log('➡️ Authorization', (config.headers as any).Authorization);
   }
   return config;
 });
@@ -96,12 +97,11 @@ client.interceptors.response.use(
       isRefreshing = true;
 
       try {
-        // CHANGED: 필요 시 refreshToken을 함께 보낼 수 있게 확장(서버 정책 무관하게 동작)
         const rt = await getRefreshToken();
         const refreshRes = await axios.post(
-          `${API_BASE_URL}/api/auth/refresh`,
-          rt ? { refreshToken: rt } : {},
-          { withCredentials: true } // 쿠키 기반도 동작
+          `${API_BASE_URL}/api/auth/token/refresh`,
+          {},
+          { withCredentials: true }
         );
 
         let { accessToken, refreshToken } = refreshRes.data ?? {};

@@ -49,7 +49,7 @@ const ProfileCard = (): JSX.Element => { // CHANGED: 반환 타입 명시(Strict
           />
         ) : (
           <Image
-            source={require('../assets/avatar.png')}
+            // source={require('../assets/avatar.png')}
             className="w-40 h-25"
             resizeMode="contain"
           />

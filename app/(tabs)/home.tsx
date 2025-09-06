@@ -76,10 +76,10 @@ export default function HomeScreen() {
       />
 
       {/* (테스트 전용) 배포 전 제거 권장 */}
-      <View style={{ paddingHorizontal: 16, paddingTop: 8, gap: 8 }}>
+      {/* <View style={{ paddingHorizontal: 16, paddingTop: 8, gap: 8 }}>
         <Button title="Reset Today Limit" onPress={() => growth.resetTodayOnce()} />
         <Button title="Scan Now" onPress={() => growth.scanNow()} />
-      </View>
+      </View> */}
 
       {/* 추가/수정 모달 */}
       <AddRoutineModal

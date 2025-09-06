@@ -1,12 +1,8 @@
-// features/retrospect/store/store.ts
 import { create } from "zustand";
 import type { Retrospect, RoutineStatus, Mood } from "../types";
 
-// ✅ 목 API
-import {
-  fetchRetrospect as fetchRetrospectMock,
-  saveRetrospect as saveRetrospectMock,
-} from "../api/api";
+// ✅ 실서버 API 사용
+import { fetchRetrospect, saveRetrospect } from "@features/retrospect/api/api";
 
 type State = {
   data: Retrospect | null;
@@ -15,10 +11,8 @@ type State = {
 };
 
 type Actions = {
-  load: (
-    date: string,
-    getDailyRoutines?: (date: string) => { id: number; title: string; category: any }[],
-  ) => Promise<void>;
+  // 🔧 서버가 해당 날짜의 루틴 목록을 함께 내려주므로 인자는 date만
+  load: (date: string) => Promise<void>;
 
   cycleStatus: (id: number) => void;
   setStatus: (date: string, id: number, status: RoutineStatus) => void;
@@ -32,64 +26,22 @@ export const useRetrospectStore = create<State & Actions>((set, get) => ({
   loading: false,
   error: undefined,
 
-  /** 로드: 저장본 우선 → 스냅샷으로 보정/추가 */
-  load: async (date, getDailyRoutines) => {
+  /** 로드: 서버 데이터 그대로 사용 (병합 불필요) */
+  load: async (date) => {
     set({ loading: true, error: undefined });
-
     try {
-      // 1) 저장본 먼저 로드 (없으면 null)
-      const saved = await fetchRetrospectMock(date, undefined);
-
-      // 2) 오늘 스냅샷 (기본 NONE)
-      const base =
-        getDailyRoutines?.(date)?.map((r) => ({
-          id: r.id,
-          title: r.title,
-          category: r.category ?? "기타",
-          status: "NONE" as RoutineStatus,
-        })) ?? [];
-
-      // 3) 병합: id는 문자열로 정규화해서 비교
-      let routines = base;
-      if (saved?.routines?.length) {
-        const baseMap = new Map<string, (typeof base)[number]>(
-          base.map((b) => [String(b.id), { ...b }]),
-        );
-
-        for (const sr of saved.routines) {
-          const key = String(sr.id);
-          if (baseMap.has(key)) {
-            baseMap.set(key, { ...baseMap.get(key)!, status: sr.status });
-          } else {
-            baseMap.set(key, {
-              id: sr.id,
-              title: sr.title,
-              category: sr.category ?? "기타",
-              status: sr.status as RoutineStatus,
-            });
-          }
-        }
-        routines = Array.from(baseMap.values());
-      }
-
-      // 4) 최종 상태 세팅 (저장본이 있으면 note/mood/submitted 유지)
+      const r = await fetchRetrospect(date);
+      set({ data: r, loading: false, error: undefined });
+    } catch (e: any) {
+      const body = e?.response?.data as { code?: string; message?: string } | undefined;
       set({
-        data: {
-          date,
-          routines,
-          note: saved?.note ?? "",
-          mood: (saved?.mood ?? null) as Mood,
-          submitted: !!saved?.submitted,
-        },
+        error: body?.message ?? "데이터를 불러오지 못했어요.",
         loading: false,
-        error: undefined,
       });
-    } catch {
-      set({ error: "데이터를 불러오지 못했어요.", loading: false });
     }
   },
 
-  /** 상태 순환 토글 */
+  /** 상태 순환 토글 (로컬 상태) */
   cycleStatus: (id) => {
     set((s) => {
       if (!s.data) return s;
@@ -103,7 +55,7 @@ export const useRetrospectStore = create<State & Actions>((set, get) => ({
     });
   },
 
-  /** 직접 세팅 */
+  /** 직접 세팅 (로컬 상태) */
   setStatus: (date, id, status) => {
     set((s) => {
       if (!s.data || s.data.date !== date) return s;
@@ -117,34 +69,29 @@ export const useRetrospectStore = create<State & Actions>((set, get) => ({
 
   pickMood: (mood) => set((s) => (s.data ? { data: { ...s.data, mood } } : s)),
 
-  /** 저장(제출): 루틴까지 함께 저장 */
+  /** 저장(제출): 루틴 스냅샷과 함께 서버에 POST */
   submit: async () => {
     const s = get();
     const data = s.data;
     if (!data) return;
 
-    // 루틴 id를 문자열로 정규화해서 저장 (병합 시 안정적)
-    const routinesPayload = data.routines.map((r) => ({
-      id: String(r.id),
-      title: r.title,
-      category: r.category ?? "기타",
-      status: r.status,
+    // 서버 saveRetrospect는 (date, note, mood, routinesSnapshot?) 서명
+    const routinesSnapshot = data.routines.map((r) => ({
+      id: r.id, // ✅ 숫자 id
+      status: r.status as RoutineStatus,
     }));
 
     try {
-      // ✅ 목 API: (date, note, mood, routines?) 형태로 저장
-      await saveRetrospectMock(data.date, data.note, data.mood, routinesPayload);
-
+      await saveRetrospect(data.date, data.note, data.mood, routinesSnapshot);
       set({
         data: {
           ...data,
           submitted: true,
-          routines: data.routines, // 그대로 유지
         },
       });
-    } catch {
+    } catch (e) {
       set({ error: "저장에 실패했어요. 잠시 후 다시 시도해 주세요." });
-      throw new Error("save failed");
+      throw e;
     }
   },
 }));

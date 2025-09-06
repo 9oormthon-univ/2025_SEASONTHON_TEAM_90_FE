@@ -167,6 +167,10 @@ export default function DashboardPage({
             </Text>
           </View>
         )}
+        <View className="flex-row gap-[8px] items-center my-4">
+          <Ai />
+          <Text className="text-[#5F5548] text-xl">AI 주간 분석</Text>
+        </View>
         <WeeklyAiAnalyze
           weekStartISO={weekStartISO}
           memberId={memberId}

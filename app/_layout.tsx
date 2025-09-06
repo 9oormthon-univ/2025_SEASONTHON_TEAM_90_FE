@@ -1,6 +1,6 @@
 // app/_layout.tsx
-import "react-native-gesture-handler"; // ✅ 항상 최상단
-import "react-native-reanimated"; // ✅ 그 다음: Reanimated 초기화
+import "react-native-gesture-handler";
+import "react-native-reanimated";
 
 import { useEffect } from "react";
 import { Stack } from "expo-router";
@@ -11,6 +11,9 @@ import "../global.css";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { BottomSheetModalProvider } from "@gorhom/bottom-sheet";
+
+// 🔥 추가: 전역 인증 Provider
+import { AuthProvider } from "@features/login/hooks/useAuth";
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
 
@@ -31,10 +34,12 @@ export default function RootLayout() {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider>
-        {/* ✅ 루트에서 한 번만 감싸기 */}
-        <BottomSheetModalProvider>
-          <Stack screenOptions={{ headerShown: false }} />
-        </BottomSheetModalProvider>
+        {/* ✅ 전역으로 AuthProvider로 감싸기 */}
+        <AuthProvider>
+          <BottomSheetModalProvider>
+            <Stack screenOptions={{ headerShown: false }} />
+          </BottomSheetModalProvider>
+        </AuthProvider>
       </SafeAreaProvider>
     </GestureHandlerRootView>
   );

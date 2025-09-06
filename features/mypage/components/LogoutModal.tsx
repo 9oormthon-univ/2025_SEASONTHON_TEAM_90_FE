@@ -1,18 +1,17 @@
 import React from 'react';
 import { View, Text, Modal, TouchableOpacity } from 'react-native';
 import SadIcon from '../assets/sad.svg';
+import { useSessionStore } from '@/features/auth/store/session.store';
 
 interface LogoutModalProps {
     visible: boolean;
-    onConfirm: () => void;
+    onConfirm: () => void;  // ✅ API 호출은 부모(MyPageScreen)에서 실행
     onCancel: () => void;
 }
 
-export default function LogoutModal({
-    visible,
-    onConfirm,
-    onCancel,
-}: LogoutModalProps) {
+export default function LogoutModal({ visible, onConfirm, onCancel }: LogoutModalProps) {
+    const { user } = useSessionStore();
+
     return (
         <Modal
             transparent
@@ -22,10 +21,8 @@ export default function LogoutModal({
         >
             <View className="flex-1 justify-center items-center bg-black/40">
                 <View className="bg-white rounded-3xl p-10 w-96 items-center">
-                    
-                    {/* 안내 텍스트 */}
                     <Text className="text-lg font-bold text-center mb-2">
-                        단칸방고양이12 님!
+                        {user?.nickname ?? user?.name ?? '게스트'} 님!
                     </Text>
                     <Text className="text-lg font-bold text-center mb-2">
                         정말 로그아웃 하실 건가요?
@@ -41,26 +38,20 @@ export default function LogoutModal({
 
                     {/* 버튼 영역 */}
                     <View className="flex-row w-full">
-                        {/* 네 버튼 */}
                         <TouchableOpacity
                             onPress={onConfirm}
                             className="flex-1 py-4 rounded-xl mx-2"
                             style={{ backgroundColor: '#CBC9C2' }}
                         >
-                            <Text className="text-center text-gray-800 font-bold text-lg">
-                                네
-                            </Text>
+                            <Text className="text-center text-gray-800 font-bold text-lg">네</Text>
                         </TouchableOpacity>
 
-                        {/* 아니요 버튼 */}
                         <TouchableOpacity
                             onPress={onCancel}
                             className="flex-1 py-4 rounded-xl mx-2"
                             style={{ backgroundColor: '#5F5548' }}
                         >
-                            <Text className="text-center text-white font-bold text-lg">
-                                아니요
-                            </Text>
+                            <Text className="text-center text-white font-bold text-lg">아니요</Text>
                         </TouchableOpacity>
                     </View>
                 </View>

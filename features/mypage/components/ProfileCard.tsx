@@ -10,12 +10,13 @@ const ProfileCard = () => {
   const router = useRouter();
 
   const handleEditProfile = () => {
-    router.push('/(tabs)/_my/EditProfileScreen'); // ✅ 여기서 이동
+    router.push('/(tabs)/_my/EditProfileScreen');
   };
+
   const handleMockLoginAndNavigate = async () => {
     const ok = await handleMockLogin();
     if (ok) {
-      router.push('/(tabs)/_my/EditProfileScreen'); // ✅ 로그인 성공 후 이동
+      router.push('/(tabs)/_my/EditProfileScreen');
     }
   };
 
@@ -38,9 +39,9 @@ const ProfileCard = () => {
         )}
       </View>
 
-      {/* 닉네임 */}
+      {/* 닉네임 (없으면 name 사용) */}
       <Text className="mt-3 text-lg font-semibold text-black">
-        {user?.nickname ?? '게스트'}
+        {user?.nickname ?? user?.name ?? '게스트'}
       </Text>
 
       {/* 로그인 / 내 정보 수정 버튼 */}

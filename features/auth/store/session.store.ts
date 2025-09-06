@@ -8,7 +8,9 @@ interface Tokens {
 interface User {
   id?: string;
   nickname?: string;
+  name?: string;
   profileImageUrl?: string;
+  interests?: string[];
 }
 
 interface SessionState {
@@ -24,5 +26,15 @@ export const useSessionStore = create<SessionState>((set) => ({
   tokens: null,
   setUser: (user) => set({ user }),
   setTokens: (tokens) => set({ tokens }),
-  clear: () => set({ user: null, tokens: null }),
+  clear: () => {
+    // ✅ 메모리 초기화
+    set({ user: null, tokens: null });
+
+    // ✅ 로컬 스토리지 초기화 (zustand-persist 안 쓴 경우)
+    try {
+      localStorage.removeItem('session');
+    } catch {
+      // RN 환경에서는 AsyncStorage 사용
+    }
+  },
 }));

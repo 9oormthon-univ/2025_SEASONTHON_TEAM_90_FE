@@ -1,74 +1,125 @@
-// 공용 Axios 클라이언트
-import { Platform } from "react-native";
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import axios from "axios";
+import { Platform } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import axios from 'axios';
 
-/**
- * 환경설정: EXPO_PUBLIC_API_BASE_URL 사용
- */
-const API_BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL ?? "http://localhost:8080";
+const API_BASE_URL =
+  process.env.EXPO_PUBLIC_API_BASE_URL ?? 'http://localhost:8080';
 
-/**
- * 외부에서 주입 가능한 401 처리기 (예: 세션스토어 logout + 토스트)
- */
 let onUnauthorized: (() => void) | null = null;
 export const setOnUnauthorized = (handler: () => void) => {
   onUnauthorized = handler;
 };
 
-/**
- * 액세스 토큰 헬퍼: 메모리 캐시 + AsyncStorage 동기화
- */
-let memToken: string | null = null;
+let memAccess: string | null = null;
+let memRefresh: string | null = null;
 
-/** 엑세스 토큰 가져오기 함수(header 설정) */
+// Access Token
 export const getAccessToken = async () => {
-  if (memToken) return memToken;
-  const t = await AsyncStorage.getItem("accessToken");
-  memToken = t;
+  if (memAccess) return memAccess;
+  const t = await AsyncStorage.getItem('accessToken');
+  memAccess = t;
   return t;
 };
 
-/** 엑세스 토큰 set 설정 */
 export const setAccessToken = async (token: string | null) => {
-  memToken = token;
-  if (token) await AsyncStorage.setItem("accessToken", token);
-  else await AsyncStorage.removeItem("accessToken");
+  memAccess = token;
+  if (token) await AsyncStorage.setItem('accessToken', token);
+  else await AsyncStorage.removeItem('accessToken');
 };
 
-/** API 호출 포맷 정의(사용자 OS에 따른 헤더 설정) */
+// Refresh Token
+export const getRefreshToken = async () => {
+  if (memRefresh) return memRefresh;
+  const t = await AsyncStorage.getItem('refreshToken');
+  memRefresh = t;
+  return t;
+};
+
+export const setRefreshToken = async (token: string | null) => {
+  memRefresh = token;
+  if (token) await AsyncStorage.setItem('refreshToken', token);
+  else await AsyncStorage.removeItem('refreshToken');
+};
+
+// Axios 인스턴스
 const client = axios.create({
   baseURL: API_BASE_URL,
   timeout: 15_000,
   headers: {
-    "Content-Type": "application/json",
-    "X-Client": `rn-${Platform.OS}`,
+    'Content-Type': 'application/json',
+    'X-Client': `rn-${Platform.OS}`,
   },
 });
 
-// req: 토큰 주입
+// 요청 인터셉터: 항상 Bearer 붙이기
 client.interceptors.request.use(async (config) => {
   const token = await getAccessToken();
   if (token) {
     config.headers = config.headers ?? {};
-    const value = token.startsWith('Bearer ') ? token : `Bearer ${token}`;
-    (config.headers as any).Authorization = value;
+    (config.headers as any).Authorization = `Bearer ${token}`;
+    console.log('➡️ 요청 Authorization 헤더:', (config.headers as any).Authorization);
   }
   return config;
 });
 
-// res: 401 공통 처리
+// 응답 인터셉터: 401 → Refresh 로직
+let isRefreshing = false;
+let queue: ((token: string | null) => void)[] = [];
+
 client.interceptors.response.use(
   (res) => res,
   async (error) => {
-    const status = error?.response?.status as number | undefined;
-    if (status === 401) {
-      // 서버에서 401이면 토큰 파기 및 콜백 알림
-      await setAccessToken(null);
-      onUnauthorized?.();
+    const status = error?.response?.status;
+    const originalRequest = error.config;
+
+    if (status === 401 && !originalRequest._retry) {
+      if (isRefreshing) {
+        return new Promise((resolve) => {
+          queue.push((token) => {
+            if (token) {
+              originalRequest.headers['Authorization'] = `Bearer ${token}`;
+              resolve(client(originalRequest));
+            } else {
+              resolve(Promise.reject(error));
+            }
+          });
+        });
+      }
+
+      originalRequest._retry = true;
+      isRefreshing = true;
+
+      try {
+        const res = await axios.post(`${API_BASE_URL}/api/auth/refresh`, {});
+        let { accessToken, refreshToken } = res.data;
+
+        // Bearer 접두어 제거
+        const pureAccess = accessToken?.startsWith('Bearer ')
+          ? accessToken.replace('Bearer ', '')
+          : accessToken;
+
+        await setAccessToken(pureAccess);
+        await setRefreshToken(refreshToken);
+
+        queue.forEach((cb) => cb(pureAccess));
+        queue = [];
+
+        originalRequest.headers['Authorization'] = `Bearer ${pureAccess}`;
+        return client(originalRequest);
+      } catch (err) {
+        await setAccessToken(null);
+        await setRefreshToken(null);
+        onUnauthorized?.();
+        queue.forEach((cb) => cb(null));
+        queue = [];
+        return Promise.reject(err);
+      } finally {
+        isRefreshing = false;
+      }
     }
+
     return Promise.reject(error);
-  },
+  }
 );
 
 export default client;

@@ -19,10 +19,13 @@ export default function RootLayout() {
   if (!fontsLoaded) return null;
 
   return (
-    <Stack screenOptions={{ headerShown: false }}>
+    <Stack
+      screenOptions={{ headerShown: false }}
+       initialRouteName="(tabs)"   // ✅ 앱 실행 시 바로 home 진입
+    >
       {/* 온보딩 플로우 */}
-      <Stack.Screen name="onboarding/splash" />
-      <Stack.Screen name="onboarding/login" />
+      {/* <Stack.Screen name="onboarding/splash" />
+      <Stack.Screen name="onboarding/login" />  */}
       <Stack.Screen name="onboarding/purpose-select" />
 
       {/* 로그인 이후 메인 탭 */}

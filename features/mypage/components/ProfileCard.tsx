@@ -1,35 +1,41 @@
 import React, { JSX, useState } from 'react';
 import { View, Text, Image, TouchableOpacity } from 'react-native';
 import { useSessionStore } from '@/features/auth/store/session.store';
-import { devMockLogin, LoginResponse } from '@/features/login/api/login'; // ✅ LoginResponse import
 import { useRouter } from 'expo-router';
+import client, { setAccessToken, setRefreshToken } from '@/shared/api/client';
 
-const ProfileCard = (): JSX.Element => {
-  const { user } = useSessionStore();
-  const [email, setEmail] = useState('test@example.com'); // ✅ 기본 테스트용 이메일
+const ProfileCard = () => {
+  const { user, setUser } = useSessionStore();
   const router = useRouter();
 
   const handleEditProfile = () => {
     router.push('/(tabs)/_my/EditProfileScreen');
   };
 
-  const handleMockLoginAndNavigate = async () => {
+  const handleMockLogin = async () => {
     try {
-      // ✅ devMockLogin 호출, LoginResponse 타입 보장
-      const res: LoginResponse = await devMockLogin({ email });
+      const res = await client.post('/api/dev/auth/mock-login', {
+        email: 'test@example.com',
+        name: '테스트유저',
+        socialType: 'KAKAO',
+        mockSocialId: 'mock_user_001',
+      });
 
-      if (res?.accessToken) {
-        console.log('✅ Mock 로그인 성공:', res.accessToken);
-        router.push('/(tabs)/_my/EditProfileScreen');
-      }
-    } catch (e) {
-      console.error('❌ Mock 로그인 실패:', e);
+      const { accessToken, refreshToken } = res.data.data;
+      await setAccessToken(accessToken);
+      await setRefreshToken(refreshToken);
+
+      const me = await client.get('/api/members/me');
+      setUser(me.data);
+
+      router.push('/(tabs)/_my/EditProfileScreen');
+    } catch (err) {
+      console.error('❌ Mock 로그인 실패:', err);
     }
   };
 
   return (
     <View className="items-center mt-6">
-      {/* 아바타 */}
       <View className="items-center justify-center w-40 h-40 bg-white rounded-full shadow">
         {user?.profileImageUrl ? (
           <Image
@@ -46,16 +52,14 @@ const ProfileCard = (): JSX.Element => {
         )}
       </View>
 
-      {/* 닉네임 */}
       <Text className="mt-3 text-lg font-semibold text-black">
         {user?.nickname ?? user?.name ?? '게스트'}
       </Text>
 
-      {/* 로그인 / 내 정보 수정 버튼 */}
       <TouchableOpacity
         className="px-6 py-2 mt-2 bg-white rounded-full shadow-sm"
         style={{ backgroundColor: '#F7F7F7' }}
-        onPress={user ? handleEditProfile : handleMockLoginAndNavigate}
+        onPress={user ? handleEditProfile : handleMockLogin}
       >
         <Text
           className="text-center"

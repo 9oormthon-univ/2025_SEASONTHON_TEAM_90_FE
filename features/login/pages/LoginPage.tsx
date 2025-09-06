@@ -46,15 +46,14 @@ export default function LoginPage() {
     };
 
     return (
-        <View className="justify-center flex-1 p-6">
-            <View>
+        <View className="justify-center flex-1 p-6 bg-[#F2EFE6]">
+            <View className='flex-col items-center gap-[10px] mb-8'>
                 <Logo />
                 <HabiGlow />
             </View>
-            <View className="gap-3">
-                <Text className="text-base">아이디</Text>
+            <View className="gap-8">
                 <TextInput
-                    className="p-3 border rounded-xl"
+                    className="p-5 border rounded-xl"
                     value={email}
                     onChangeText={setEmail}
                     autoCapitalize="none"
@@ -64,9 +63,8 @@ export default function LoginPage() {
                     textContentType="emailAddress"
                 />
 
-                <Text className="mt-4 text-base">비밀번호</Text>
                 <TextInput
-                    className="p-3 border rounded-xl"
+                    className="p-5 border rounded-xl"
                     value={password}
                     onChangeText={setPassword}
                     placeholder="비밀번호를 입력해 주세요"
@@ -77,11 +75,11 @@ export default function LoginPage() {
                 <Pressable
                     disabled={disabled}
                     onPress={onSubmit}
-                    className={`mt-6 rounded-xl items-center justify-center h-12 ${disabled ? 'opacity-50' : ''} bg-black`}
+                    className={` rounded-xl items-center justify-center p-5 ${disabled ? 'opacity-50' : ''} bg-[#5F5548]`}
                     accessibilityRole="button"
                     accessibilityLabel="로그인 하기"
                 >
-                    {loading ? <ActivityIndicator /> : <Text className="font-semibold text-white">로그인 하기</Text>}
+                    {loading ? <ActivityIndicator /> : <Text className="text-[20px] font-semibold text-white">로그인 하기</Text>}
                 </Pressable>
             </View>
         </View>

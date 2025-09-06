@@ -1,8 +1,9 @@
-import React, { JSX, useState } from 'react';
+import React from 'react';
 import { View, Text, Image, TouchableOpacity } from 'react-native';
 import { useSessionStore } from '@/features/auth/store/session.store';
 import { useRouter } from 'expo-router';
-import client, { setAccessToken, setRefreshToken } from '@/shared/api/client';
+// ✅ mock 데이터 import
+import { mockMyInfo } from '@/features/mypage/mock/mypage.mock';
 
 const ProfileCard = () => {
   const { user, setUser } = useSessionStore();
@@ -12,22 +13,10 @@ const ProfileCard = () => {
     router.push('/(tabs)/_my/EditProfileScreen');
   };
 
+  // ✅ 실제 API 대신 mock 데이터로 로그인
   const handleMockLogin = async () => {
     try {
-      const res = await client.post('/api/dev/auth/mock-login', {
-        email: 'test@example.com',
-        name: '테스트유저',
-        socialType: 'KAKAO',
-        mockSocialId: 'mock_user_001',
-      });
-
-      const { accessToken, refreshToken } = res.data.data;
-      await setAccessToken(accessToken);
-      await setRefreshToken(refreshToken);
-
-      const me = await client.get('/api/members/me');
-      setUser(me.data);
-
+      setUser(mockMyInfo.data); // user store에 mock 데이터 저장
       router.push('/(tabs)/_my/EditProfileScreen');
     } catch (err) {
       console.error('❌ Mock 로그인 실패:', err);
@@ -53,7 +42,7 @@ const ProfileCard = () => {
       </View>
 
       <Text className="mt-3 text-lg font-semibold text-black">
-        {user?.nickname ?? user?.name ?? '게스트'}
+        {user?.memberName ?? '게스트'}
       </Text>
 
       <TouchableOpacity
@@ -61,16 +50,7 @@ const ProfileCard = () => {
         style={{ backgroundColor: '#F7F7F7' }}
         onPress={user ? handleEditProfile : handleMockLogin}
       >
-        <Text
-          className="text-center"
-          style={{
-            fontFamily: 'Pretendard',
-            fontWeight: '400',
-            fontSize: 14,
-            lineHeight: 21,
-            color: '#3A332A',
-          }}
-        >
+        <Text className="text-center text-sm text-[#3A332A]">
           {user ? '내 정보 수정' : 'Mock 로그인'}
         </Text>
       </TouchableOpacity>

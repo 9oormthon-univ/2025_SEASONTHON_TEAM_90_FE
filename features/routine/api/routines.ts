@@ -108,14 +108,14 @@ async function mock_updateRoutineApi(id: number, form: AddRoutineForm): Promise<
   DB = DB.map((r) =>
     r.id === id
       ? ({
-        ...r,
-        category: form.category ?? r.category,
-        growthMode: !!form.growthMode,
-        goalType: form.growthMode ? form.goalType : undefined,
-        goalValue: form.growthMode ? form.goalValue : undefined,
-        growthPeriodDays: form.growthMode ? form.growthPeriodDays : undefined,
-        growthIncrement: form.growthMode ? form.growthIncrement : undefined,
-      } as Routine)
+          ...r,
+          category: form.category ?? r.category,
+          growthMode: !!form.growthMode,
+          goalType: form.growthMode ? form.goalType : undefined,
+          goalValue: form.growthMode ? form.goalValue : undefined,
+          growthPeriodDays: form.growthMode ? form.growthPeriodDays : undefined,
+          growthIncrement: form.growthMode ? form.growthIncrement : undefined,
+        } as Routine)
       : r,
   );
   const found = DB.find((r) => r.id === id)!;
@@ -282,25 +282,54 @@ type RoutineResp = {
   targetValue?: number | null;
   growthCycleDays?: number | null;
   targetIncrement?: number | null;
+  currentCycleDays?: number;
+  failureCycleDays?: number;
   createdAt?: string;
   updatedAt?: string;
 };
 
+// GET /api/routines, /api/routines/category
 type RoutineListResp = {
   routines: RoutineResp[];
   totalCount: number;
 };
 
-// 카테고리 매핑 (표시명 ↔ 코드)
+// GET /api/routines/categories
+type CategoryResp = { code: string; description: string };
+
+// GET /api/routines/adaptation-check
+type AdaptationCheckResp = {
+  growthReadyRoutines: any[];
+  reductionReadyRoutines: any[];
+  totalGrowthReadyCount: number;
+  totalReductionReadyCount: number;
+  totalAdaptiveCount: number;
+};
+
+// PATCH /api/routines/{routineId}/target
+type TargetAdjustAction = "INCREASE" | "DECREASE" | "RESET";
+type TargetAdjustResp = {
+  routineId: number;
+  routineTitle: string;
+  previousValue: number;
+  newValue: number;
+  action: TargetAdjustAction;
+  success: boolean;
+  message: string;
+};
+
+/* ─────────────────────────────────────────────────────────────────────────────
+  매핑 유틸 (코드 ↔ 라벨)
+────────────────────────────────────────────────────────────────────────────── */
 const categoryLabelToCode = (label?: string): string | undefined => {
   const map: Record<string, string> = {
-    "운동": "HEALTH",
-    "학업": "LEARNING",
+    운동: "HEALTH",
+    학업: "LEARNING",
     "마음 챙김": "MINDFULNESS",
-    "식습관": "DIET",
-    "취미": "HOBBY",
+    식습관: "DIET",
+    취미: "HOBBY",
     "사회적 관계": "SOCIAL",
-    "업무": "WORK",
+    업무: "WORK",
     "재정 관리": "FINANCE",
     "환경 정리": "ENVIRONMENT",
     "습관 개선": "HABIT_IMPROVEMENT",
@@ -342,18 +371,22 @@ const toCreateBody = (f: AddRoutineForm) => {
 };
 
 // 서버 → 프론트 모델 변환 (RoutineResp → Routine)
+
 const toRoutine = (r: RoutineResp): Routine => ({
   id: r.routineId,
   title: r.title,
   category: categoryCodeToLabel(r.category) ?? r.category,
   subtitleHint: "",
-  streakDays: 0,
+  streakDays: r.currentCycleDays ?? 0,
   growthMode: !!r.isGrowthMode,
   goalType: r.isGrowthMode ? (r.targetType === "TIME" ? "time" : "count") : undefined,
   goalValue: r.isGrowthMode ? (r.targetValue ?? undefined) : undefined,
   growthPeriodDays: r.isGrowthMode ? (r.growthCycleDays ?? undefined) : undefined,
   growthIncrement: r.isGrowthMode ? (r.targetIncrement ?? undefined) : undefined,
   history: [],
+  // (선택) Routine 타입에 아래 필드 추가해 활용 가능
+  // currentCycleDays: r.currentCycleDays ?? 0,
+  // failureCycleDays: r.failureCycleDays ?? 0,
 });
 
 /** [real] 목록 */
@@ -412,7 +445,7 @@ async function real_patchRoutineTarget(
     {},
     { params: { action } },
   );
-  return res.data.data;
+  return data;
 }
 
 /* ─────────────────────────────────────────────────────────────────────────────

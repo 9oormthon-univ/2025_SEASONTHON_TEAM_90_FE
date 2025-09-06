@@ -1,35 +1,25 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, Alert } from 'react-native';
-import client from '@/shared/api/client';
+import { View, Text } from 'react-native';
+// ✅ mock 데이터 import
+import { mockTodayRecord, mockWeeklyStats } from '@/features/mypage/mock/mypage.mock';
 
 const StatsCard = () => {
   const [consecutiveDays, setConsecutiveDays] = useState<number>(0);
   const [successRate, setSuccessRate] = useState<number>(0);
 
   useEffect(() => {
-    const fetchStats = async () => {
-      try {
-        // 오늘 루틴 기록
-        const todayRes = await client.get('/api/daily-records/today');
-        const routineRecords = todayRes.data?.routineRecords ?? [];
-        if (routineRecords.length > 0) {
-          const maxConsecutive = Math.max(
-            ...routineRecords.map((r: any) => r.consecutiveDays ?? 0)
-          );
-          setConsecutiveDays(maxConsecutive);
-        }
+    // 오늘 루틴 기록 mock 사용
+    const routineRecords = mockTodayRecord.data?.routineRecords ?? [];
+    if (routineRecords.length > 0) {
+      const maxConsecutive = Math.max(
+        ...routineRecords.map((r: any) => r.consecutiveDays ?? 0)
+      );
+      setConsecutiveDays(maxConsecutive);
+    }
 
-        // 주간 대시보드 통계
-        const weeklyRes = await client.get('/api/dashboard/weekly/stats');
-        const rate = weeklyRes.data?.metrics?.overall?.rate ?? 0;
-        setSuccessRate(rate);
-      } catch (err: any) {
-        console.error('❌ Stats 불러오기 실패:', err.response?.data ?? err);
-        Alert.alert('오류', '통계를 불러오는 데 실패했습니다.');
-      }
-    };
-
-    fetchStats();
+    // 주간 대시보드 통계 mock 사용
+    const rate = mockWeeklyStats.data?.metrics?.overall?.rate ?? 0;
+    setSuccessRate(rate);
   }, []);
 
   return (

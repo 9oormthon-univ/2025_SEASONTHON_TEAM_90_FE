@@ -1,11 +1,12 @@
 import { useMemo } from "react";
 import { View, Text } from "react-native";
 import type { WeeklyDashboardData, Emotion } from "../types";
+import { emotionFromScore } from "../utils/emotion";
 
 import GloomyIcon from "@/features/dashboard/assets/gloomy.svg";
 import NormalIcon from "@/features/dashboard/assets/basic.svg";
 import HappyIcon from "@/features/dashboard/assets/happy.svg";
-import ExitedIcon from "@/features/dashboard/assets/excited.svg";
+import ExitedIcon from "@/features/dashboard/assets/exited.svg";
 
 // 직선 가져오기
 import Svg, { Polyline, Defs, LinearGradient, Stop, Rect, Line } from "react-native-svg";
@@ -13,9 +14,10 @@ import Svg, { Polyline, Defs, LinearGradient, Stop, Rect, Line } from "react-nat
 /**WeeklyDashboardData 타입을 사용하여 props 타입을 명시 */
 export interface EmotionChangeProps {
   daily: WeeklyDashboardData["daily_completion"];
+  summaryText: string;
 }
 
-// 아이콘과 Emotion 타입을 매핑하는 객체
+// 아이콘과 Emotion 타입을 매핑
 const emotionIcons: Record<Emotion, React.ComponentType<{ width: number; height: number }>> = {
   LOW: GloomyIcon,
   NORMAL: NormalIcon,
@@ -43,16 +45,29 @@ const Point = ({ emotion }: { emotion: Emotion }) => {
 //   return path;
 // };
 
-export default function EmotionChange({ daily }: EmotionChangeProps) {
-  // const TOP_RATIO = 0.48;
-  const DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"] as const;
+/** 하루 레코드에서 Emotion 안전 추출(점수/문자열 모두 지원) */
+const pickEmotion = (
+  d: WeeklyDashboardData["daily_completion"][number]
+): Emotion => {
+  const score =
+    (d as any)?.primary_emotion_score ?? (d as any)?.primaryEmotionScore;
+  if (typeof score === "number") return emotionFromScore(score);
+
+  const e = d.primary_emotion as Emotion | undefined;
+  if (e === "LOW" || e === "NORMAL" || e === "GOOD" || e === "VERY_GOOD") {
+    return e;
+  }
+  return "NORMAL"; // fallback
+};
+
+export default function EmotionChange({ daily, summaryText }: EmotionChangeProps) {
   const ORDER = ["VERY_GOOD", "GOOD", "NORMAL", "LOW"] as const;
 
   // 빈 데이터 방어
   if (!daily || daily.length === 0) {
     return (
       <View className="px-6 py-8 bg-white rounded-xl">
-        <Text className="text-center text-[16px] text-[#3A332A]">데이터가 없어요.</Text>
+        <Text className="text-center text-[16px] text-[#3A332A]">감정 데이터가 없어요.</Text>
       </View>
     );
   }
@@ -60,11 +75,12 @@ export default function EmotionChange({ daily }: EmotionChangeProps) {
   const points = useMemo(() => {
     const days = daily.slice(0, 7);
     return days.map((d, idx) => {
-      const idxInOrder = ORDER.indexOf(d.primary_emotion as Emotion);
-      const safeIdx = idxInOrder === -1 ? ORDER.indexOf("NORMAL") : idxInOrder; // ← fallback
+      const emotion = pickEmotion(d);
+      const idxInOrder = ORDER.indexOf(emotion);
+      const safeIdx = idxInOrder === -1 ? ORDER.indexOf("NORMAL") : idxInOrder;
       const x = (idx + 0.5) * (100 / days.length); // 각 요일 중앙
       const y = 90 - (safeIdx / (ORDER.length - 1)) * 80; // 상단 10% ~ 하단 90%
-      return { x, y, emotion: d.primary_emotion as Emotion, date: d.date };
+      return { x, y, emotion, date: d.date };
     });
   }, [daily]);
 
@@ -90,10 +106,10 @@ export default function EmotionChange({ daily }: EmotionChangeProps) {
               <Stop offset="100%" stopColor="#FFE8A3" />
             </LinearGradient>
           </Defs>
-          
+
           {/* 배경 전체를 그라데이션으로 채움 */}
           <Rect x="0" y="0" width="100" height="100" fill="url(#grad)" />
-          
+
           {/* 배경 가로 점선 */}
           {[25, 50, 75, 99].map((y) => (
             <Line
@@ -135,7 +151,7 @@ export default function EmotionChange({ daily }: EmotionChangeProps) {
       </View>
 
       <Text className="text-center text-[16px] text-[#3A332A] mt-4">
-        이번 주는 전반적으로 <Text className="font-bold">안정적</Text>이에요.
+        {summaryText}
       </Text>
     </View>
   );

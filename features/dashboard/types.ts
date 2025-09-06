@@ -19,6 +19,8 @@ export interface WeeklyDashboardData {
         partial_achievement_rate: number;
         current_streak: number;
         max_streak_this_period: number;
+
+        total_routines?: number;
     };
     emotion_distribution: Partial<Record<Emotion, number>>;
     daily_completion: Array<{
@@ -40,7 +42,7 @@ export interface WeeklyDashboardData {
 
 /**
  * 서버에서 오는 AI 인사이트 원본 `data` 객체 타입
- * - insightJson을 포함하는 순수 서버 데이터입니다.
+ * - insightJson을 포함하는 순수 서버 데이터
  */
 export interface WeeklyInsightEntity {
     insightJson: any;
@@ -54,7 +56,7 @@ export interface WeeklyInsightEntity {
 
 /**
  * AI 인사이트 API의 전체 원본 응답 타입
- * - client.get<T>에 사용될 타입입니다.
+ * - client.get<T>에 사용될 타입
  */
 export interface WeeklyInsightApiResponse {
     code: string;

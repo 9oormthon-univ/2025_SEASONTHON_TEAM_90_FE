@@ -11,7 +11,7 @@ web-build/
 ios/
 android/
 .env
-.env.*
+.env.*s
 
 # macOS
 .DS_Store
@@ -26,3 +26,5 @@ android/
 
 expo-env.d.ts
 # @end expo-cli
+
+.google-service.json

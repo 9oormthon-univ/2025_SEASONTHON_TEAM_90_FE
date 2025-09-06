@@ -7,6 +7,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   name: "Seasonthon Team90",
   slug: "seasonthon-team90",
   version: "1.0.0",
+  owner: "team90",
   orientation: "portrait",
 
   // 🔑 AuthSession 딥링크 스킴 (Redirect URI: goorm90://redirect)

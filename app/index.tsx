@@ -22,7 +22,7 @@ export default function Index() {
   // 로그인 시 탭 루트, 아니면 로그인 페이지
   return (
     <Redirect
-      href={isLoggedIn ? "/(tabs)/home" : "/(tabs)/login"}
+      href={isLoggedIn ? "/(tabs)/home" : "/login"}
     />
   );
 }

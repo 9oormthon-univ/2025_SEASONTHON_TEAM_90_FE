@@ -14,7 +14,27 @@ export type LoginResponse = {
     expiresIn?: number;
 };
 
-export async function loginWithEmail(email: string): Promise<LoginResponse> {
-    const res = await client.post('/api/auth/login', { email }); // ← 백엔드가 엔드포인트 매핑
+export type SocialType = 'KAKAO' | 'GOOGLE' | 'APPLE' | 'NAVER';
+
+type DevMockLoginParams = {
+    email: string;
+    name?: string;
+    socialType?: SocialType;
+    mockSocialId?: string;
+};
+
+
+export async function devMockLogin(params: DevMockLoginParams): Promise<LoginResponse> {
+    const { email, name, socialType, mockSocialId } = params;
+
+    const payload = {
+        email,
+        name: name ?? '테스트유저',
+        socialType: socialType ?? 'KAKAO',
+        mockSocialId: mockSocialId ?? `mock_${email.split('@')[0]}`,
+    };
+
+    const res = await client.post('/api/dev/auth/mock-login', payload);
     return res.data as LoginResponse;
 }
+

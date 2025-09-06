@@ -1,24 +1,23 @@
 import React, { useMemo, useState } from 'react';
 import { View, Text, TextInput, Pressable, ActivityIndicator, Alert } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
-import { loginWithEmail } from '@/features/login/api/login';
+import { router } from 'expo-router';
+import { devMockLogin } from '@/features/login/api/login';
 import { useAuthStore } from '@/features/login/store/auth.store';
 import { validateEmail } from '@/features/login/utils/validateEmail';
-import HabiGlow from '../assets/HabiGlow.svg'
-import Logo from '../assets/logo.svg'
+
+import HabiGlow from '../assets/HabiGlow.svg';
+import Logo from '../assets/logo.svg';
 
 /** 로그인 화면
  * - UI: 이메일/비밀번호 입력, 로그인 버튼
  * - 실제 요청: 이메일만 전송
  */
-type Nav = ReturnType<typeof useNavigation>;
 
 export default function LoginPage() {
-    const navigation = useNavigation<Nav>();
     const setTokens = useAuthStore((s) => s.setTokens);
 
     const [email, setEmail] = useState('');
-    const [password, setPassword] = useState(''); // UI용
+    const [password, setPassword] = useState('');
     const [loading, setLoading] = useState(false);
 
     const emailValid = useMemo(() => validateEmail(email), [email]);
@@ -31,13 +30,11 @@ export default function LoginPage() {
         }
         try {
             setLoading(true);
-            const res = await loginWithEmail(email);
+            const res = await devMockLogin({ email });
             const token = res.accessToken;
             setTokens({ accessToken: token });
-            // 로그인 성공 시 홈으로 교체
-            // 네비게이션 구조에 맞게 'Home' 라우트명만 맞춰주면 됨
-            // @ts-ignore
-            router.replace("/(tabs)/home");
+
+            router.replace('/(tabs)/home');
         } catch (e: any) {
             Alert.alert('로그인 실패', e?.response?.data?.message ?? '다시 시도해 주세요.');
         } finally {
@@ -47,7 +44,7 @@ export default function LoginPage() {
 
     return (
         <View className="justify-center flex-1 p-6 bg-[#F2EFE6]">
-            <View className='flex-col items-center gap-[10px] mb-8'>
+            <View className="flex-col items-center gap-[10px] mb-8">
                 <Logo />
                 <HabiGlow />
             </View>

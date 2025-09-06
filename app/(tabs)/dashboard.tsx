@@ -1,5 +1,5 @@
 import React from "react";
-import { View, Text, ActivityIndicator } from "react-native";
+import { View, ActivityIndicator } from "react-native";
 import { useAuthStore } from "@shared/store/authStore"; 
 import DashboardPage from "@/features/dashboard/pages/DashboardPage"; 
 
@@ -17,5 +17,5 @@ export default function DashboardTabScreen() {
   }
 
   // 가져온 memberId를 DashboardPage에 prop으로 전달
-  return <DashboardPage memberId={memberId} />;
+  return <DashboardPage memberId={memberId} key={memberId} />;
 }

@@ -1,13 +1,35 @@
 // features/retrospect/api.ts
-// 목적: 회고(작성/조회) 기능을 서버 없이 "메모리 DB"로 먼저 개발.
+// 목적: 회고(작성/조회) 기능을 서버 없이 "메모리 DB"로 먼저 개발하고,
+//       환경변수(EXPO_PUBLIC_API_MODE=real)로 실서버 전환 가능하도록 구성.
+
+/* eslint-disable @typescript-eslint/consistent-type-definitions */
 
 import type { Retrospect, RoutineStatus, Mood } from "../types";
 import { applyRetrospectResult } from "../../routine/api/routines";
+// CHANGED: 실서버 전환용 공용 axios 클라이언트
+import client from "@/shared/api/client";
+
+/* ─────────────────────────────────────────────────────────────
+   0) 런타임 모드 스위치
+   - 기본(mock): EXPO_PUBLIC_API_MODE 미설정 또는 'mock'
+   - 실서버(real): EXPO_PUBLIC_API_MODE=real
+────────────────────────────────────────────────────────────── */
+const API_MODE = (process.env.EXPO_PUBLIC_API_MODE ?? "mock").toLowerCase();
+const USE_MOCK = API_MODE !== "real"; // default: true
+// CHANGED: 실서버 엔드포인트 베이스(필요 시 이 상수만 바꾸면 됨)
+const DAILY_RECORDS_BASE = "/api/daily-records";
+
+/* ─────────────────────────────────────────────────────────────
+   1) 공통 유틸 & 변환
+────────────────────────────────────────────────────────────── */
 
 const clone = <T>(v: T): T => JSON.parse(JSON.stringify(v));
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
-const toPerformanceLevel = (s: RoutineStatus) => {
+type PerformanceLevel = "FULL_SUCCESS" | "PARTIAL_SUCCESS" | "NOT_PERFORMED";
+type EmotionWire = "HAPPY" | "SOSO" | "SAD" | "MAD" | null;
+
+const toPerformanceLevel = (s: RoutineStatus): PerformanceLevel => {
   switch (s) {
     case "DONE":
       return "FULL_SUCCESS";
@@ -18,7 +40,7 @@ const toPerformanceLevel = (s: RoutineStatus) => {
   }
 };
 
-const toRoutineStatus = (p: "FULL_SUCCESS" | "PARTIAL_SUCCESS" | "NOT_PERFORMED") => {
+const toRoutineStatus = (p: PerformanceLevel): RoutineStatus => {
   switch (p) {
     case "FULL_SUCCESS":
       return "DONE";
@@ -29,9 +51,12 @@ const toRoutineStatus = (p: "FULL_SUCCESS" | "PARTIAL_SUCCESS" | "NOT_PERFORMED"
   }
 };
 
-const toEmotion = (mood: Mood | null) => mood ?? null;
-const toMood = (emotion?: "HAPPY" | "SOSO" | "SAD" | "MAD" | null) =>
-  (emotion ?? null) as Mood | null;
+const toEmotion = (mood: Mood | null): EmotionWire => mood ?? null;
+const toMood = (emotion?: EmotionWire): Mood | null => (emotion ?? null) as Mood | null;
+
+/* ─────────────────────────────────────────────────────────────
+   2) MOCK 구현 (메모리 DB)
+────────────────────────────────────────────────────────────── */
 
 // 날짜별 회고 저장소
 const DB = new Map<string, Retrospect>();
@@ -43,18 +68,23 @@ const fallbackRoutines = [
   { id: 3, title: "독서 30분 하기", category: "문화" as const },
 ];
 
-type RoutineSnapshot = { id: number; title: string; category: any };
+type RoutineSnapshot = { id: number; title: string; category: string };
 
 function mergeRoutines(existed: Retrospect, source: RoutineSnapshot[]): Retrospect {
   const byId = new Map(existed.routines.map((r) => [r.id, r]));
-  const merged = source.map((s) => byId.get(s.id) ?? { ...s, status: "NONE" as RoutineStatus });
+  const merged = source.map(
+    (s) => byId.get(s.id) ?? { ...s, status: "NONE" as RoutineStatus }
+  );
   return { ...existed, routines: merged };
 }
 
-/** ✅ 제출 전 회고의 루틴 스냅샷 강제 재병합(리프레시) */
-export async function refreshRetrospectRoutines(
+/**
+ * ✅ 제출 전 회고의 루틴 스냅샷 강제 재병합(리프레시)
+ * - 루틴 목록이 바뀌었을 때, 이미 입력 중인 회고에 최신 스냅샷을 덧씌움
+ */
+async function mock_refreshRetrospectRoutines(
   date: string,
-  getDailyRoutines?: (date: string) => RoutineSnapshot[],
+  getDailyRoutines?: (date: string) => RoutineSnapshot[]
 ) {
   await sleep(20);
   const existed = DB.get(date);
@@ -65,9 +95,9 @@ export async function refreshRetrospectRoutines(
   DB.set(date, next);
 }
 
-export async function fetchRetrospect(
+async function mock_fetchRetrospect(
   date: string,
-  getDailyRoutines?: (date: string) => RoutineSnapshot[],
+  getDailyRoutines?: (date: string) => RoutineSnapshot[]
 ): Promise<Retrospect> {
   await sleep(100);
 
@@ -94,15 +124,17 @@ export async function fetchRetrospect(
   return clone(fresh);
 }
 
-export async function setRoutineStatus(date: string, routineId: number, status: RoutineStatus) {
+async function mock_setRoutineStatus(date: string, routineId: number, status: RoutineStatus) {
   await sleep(40);
   const r = DB.get(date);
   if (!r) return;
   r.routines = r.routines.map((it) => (it.id === routineId ? { ...it, status } : it));
 }
 
-/** ✅ 회고 저장(메모 + 감정 + 제출 플래그) + streak/history 반영 */
-export async function saveRetrospect(date: string, note: string, mood: Mood | null) {
+/**
+ * ✅ 회고 저장(메모 + 감정 + 제출 플래그) + streak/history 반영
+ */
+async function mock_saveRetrospect(date: string, note: string, mood: Mood | null) {
   await sleep(120);
   const r = DB.get(date);
   if (!r) return;
@@ -116,39 +148,35 @@ export async function saveRetrospect(date: string, note: string, mood: Mood | nu
   await applyRetrospectResult(date, snapshot);
 }
 
-export async function isSubmitted(date: string) {
+async function mock_isSubmitted(date: string) {
   await sleep(20);
   return DB.get(date)?.submitted ?? false;
 }
 
-export function __resetRetrospect(date?: string) {
+function mock__resetRetrospect(date?: string) {
   if (date) DB.delete(date);
   else DB.clear();
 }
 
 /* ─────────────────────────────────────────────────────────────
-  2) ✅ 실제 서버 연동 코드 (주석)
-     명세서: {base}/api/daily-records
-     - POST /api/daily-records/{date}
-     - GET  /api/daily-records/{date}
-     - GET  /api/daily-records/today (편의)
+   3) 실서버 연동 구현
+   - 명세서(주석) 기준: {base}/api/daily-records
+   - 필요 시 DAILY_RECORDS_BASE만 교체하면 됨.
 ────────────────────────────────────────────────────────────── */
-/*
-import { api } from "@/utils/api/client";
 
 type CommonResponse<T> = { code: string; message: string; data: T };
 
 type DailyRecordResponse = {
   reflection: {
     content: string | null;
-    emotion: "HAPPY" | "SOSO" | "SAD" | "MAD" | null;
+    emotion: EmotionWire;
     reflectionDate: string; // yyyy-MM-dd
   } | null;
   routineRecords: {
     routineId: number;
     routineTitle: string;
     category: string; // HEALTH | LEARNING | ...
-    performanceLevel: "FULL_SUCCESS" | "PARTIAL_SUCCESS" | "NOT_PERFORMED";
+    performanceLevel: PerformanceLevel;
     consecutiveDays: number;
     isGrowthMode: boolean;
     targetType?: "COUNT" | "TIME" | "DATE";
@@ -170,11 +198,11 @@ type DailyRecordResponse = {
 };
 
 // 서버 → 프론트 모델 변환
-const toRetrospect = (date: string, resp: DailyRecordResponse): Retrospect => {
+const toRetrospectFromWire = (date: string, resp: DailyRecordResponse): Retrospect => {
   const routinesFromRecords = resp.routineRecords.map((rec) => ({
     id: rec.routineId,
     title: rec.routineTitle,
-    category: rec.category, // 필요 시 코드→표시명 매핑
+    category: rec.category,
     status: toRoutineStatus(rec.performanceLevel),
   }));
 
@@ -201,79 +229,132 @@ const toRetrospect = (date: string, resp: DailyRecordResponse): Retrospect => {
 };
 
 // [실서버] 날짜별 회고 조회
-export async function fetchRetrospect(date: string): Promise<Retrospect> {
-  const res = await api.get<CommonResponse<DailyRecordResponse>>(
-    `/api/daily-records/${date}`,
+async function real_fetchRetrospect(date: string): Promise<Retrospect> {
+  const res = await client.get<CommonResponse<DailyRecordResponse>>(
+    `${DAILY_RECORDS_BASE}/${date}`
   );
-  return toRetrospect(date, res.data.data);
+  return toRetrospectFromWire(date, res.data.data);
 }
 
-// [실서버] 오늘 회고 조회(편의) — 필요 시 사용
-export async function fetchTodayRetrospect(): Promise<Retrospect> {
-  const res = await api.get<CommonResponse<DailyRecordResponse>>(
-    `/api/daily-records/today`,
-  );
-  // 서버가 오늘 날짜를 reflectionDate로 내려줄 수도 있으니 우선 응답에서 추론
-  const date =
-    res.data.data?.reflection?.reflectionDate ??
-    new Date().toISOString().slice(0, 10);
-  return toRetrospect(date, res.data.data);
-}
+// [실서버] 오늘 회고 조회(필요 시 사용)
+// async function real_fetchTodayRetrospect(): Promise<Retrospect> {
+//   const res = await client.get<CommonResponse<DailyRecordResponse>>(
+//     `${DAILY_RECORDS_BASE}/today`
+//   );
+//   const date = res.data.data?.reflection?.reflectionDate ?? new Date().toISOString().slice(0, 10);
+//   return toRetrospectFromWire(date, res.data.data);
+// }
 
-// [실서버] 루틴 상태 변경(부분 저장: 서버 스펙은 전체 POST만 제공하므로,
-//  - 보통 클라이언트에 임시 상태를 들고 있다가 saveRetrospect에서 한번에 POST.
-//  - 개별 패치가 필요하면 백엔드와 PATCH 엔드포인트 협의가 필요)
-export async function setRoutineStatus(
-  date: string,
-  routineId: number,
-  status: RoutineStatus,
+// [실서버] 루틴 상태 변경(권장: 클라에서 임시 반영 후 save에서 일괄 POST)
+async function real_setRoutineStatus(
+  _date: string,
+  _routineId: number,
+  _status: RoutineStatus
 ) {
-  // 임시 로컬 상태에 반영 후, saveRetrospect에서 POST로 통합 저장하는 패턴 권장.
-  // 혹시 별도 엔드포인트가 생기면 여기에 연결:
-  // await api.patch(`/api/daily-records/${date}/routines/${routineId}`, {
-  //   performanceLevel: toPerformanceLevel(status),
-  // });
+  // 서버가 부분 저장(PATCH)을 제공하면 여기서 호출.
+  // 현재는 saveRetrospect에서 통합 POST하는 패턴 유지.
   return;
 }
 
-// [실서버] 회고/기록 저장 (덮어쓰기)
-export async function saveRetrospect(
+// [실서버] 회고/기록 저장(덮어쓰기)
+async function real_saveRetrospect(
   date: string,
   note: string,
   mood: Mood | null,
-  // 선택: 현재 화면의 루틴 목록을 받아 서버 스키마로 변환하여 함께 저장
-  routinesSnapshot?: { id: number; status: RoutineStatus }[],
+  routinesSnapshot?: { id: number; status: RoutineStatus }[]
 ) {
   const body = {
-    reflection: (note || mood) ? {
-      content: note || "",
-      emotion: toEmotion(mood), // "HAPPY" | "SOSO" | "SAD" | "MAD" | null
-    } : undefined,
+    reflection:
+      note || mood
+        ? {
+          content: note || "",
+          emotion: toEmotion(mood),
+        }
+        : undefined,
     routineRecords: (routinesSnapshot ?? []).map((it) => ({
       routineId: it.id,
       performanceLevel: toPerformanceLevel(it.status),
     })),
   };
 
-  await api.post<CommonResponse<DailyRecordResponse>>(
-    `/api/daily-records/${date}`,
-    body,
+  await client.post<CommonResponse<DailyRecordResponse>>(
+    `${DAILY_RECORDS_BASE}/${date}`,
+    body
   );
 }
 
-// [실서버] 제출 여부
-export async function isSubmitted(date: string) {
-  // 별도 엔드포인트가 없다면 fetchRetrospect(date)로 판단:
-  const r = await fetchRetrospect(date);
+// [실서버] 제출 여부(전용 API 없으면 fetch로 판단)
+async function real_isSubmitted(date: string) {
+  const r = await real_fetchRetrospect(date);
   return !!r.submitted;
 }
-*/
 
 /* ─────────────────────────────────────────────────────────────
-  3) 전환 가이드
-  - 지금은 MOCK만 사용 중.
-  - 실서버 전환 시:
-    1) 위 "실서버 연동 코드 (주석)" 블록을 주석 해제
-    2) 본 MOCK 구현을 제거하거나 환경변수(API_MODE=mock|real)로 분기
-    3) axios 클라이언트(utils/api/client.ts)에서 토큰 주입 확인
+   4) 공개 API (모드에 따라 mock/real로 위임)
+   - 외부 사용 코드는 아래 함수들만 import하면 됨.
+────────────────────────────────────────────────────────────── */
+
+/**
+ * 제출 전 회고의 루틴 스냅샷 강제 재병합(리프레시)
+ * - 실서버 모드에선 서버 소스가 단일 진실원이라 보통 no-op
+ */
+export async function refreshRetrospectRoutines(
+  date: string,
+  getDailyRoutines?: (date: string) => RoutineSnapshot[]
+) {
+  if (USE_MOCK) return mock_refreshRetrospectRoutines(date, getDailyRoutines);
+  // real: 서버가 루틴 목록을 제공하므로 별도 리프레시 불필요
+  return;
+}
+
+/** 날짜별 회고 조회 */
+export async function fetchRetrospect(
+  date: string,
+  getDailyRoutines?: (date: string) => RoutineSnapshot[]
+): Promise<Retrospect> {
+  if (USE_MOCK) return mock_fetchRetrospect(date, getDailyRoutines);
+  return real_fetchRetrospect(date);
+}
+
+/** 루틴 상태 변경(임시 저장) */
+export async function setRoutineStatus(date: string, routineId: number, status: RoutineStatus) {
+  if (USE_MOCK) return mock_setRoutineStatus(date, routineId, status);
+  return real_setRoutineStatus(date, routineId, status);
+}
+
+/**
+ * 회고 저장(메모 + 감정 + 제출 플래그)
+ * - mock: 내부 DB 저장 후 streak 계산 반영
+ * - real: 서버 POST
+ */
+export async function saveRetrospect(
+  date: string,
+  note: string,
+  mood: Mood | null,
+  routinesSnapshot?: { id: number; status: RoutineStatus }[] // real 모드에서 활용
+) {
+  if (USE_MOCK) return mock_saveRetrospect(date, note, mood);
+  return real_saveRetrospect(date, note, mood, routinesSnapshot);
+}
+
+/** 오늘 날짜가 제출되었는지 여부 */
+export async function isSubmitted(date: string) {
+  if (USE_MOCK) return mock_isSubmitted(date);
+  return real_isSubmitted(date);
+}
+
+/** 테스트/리셋용 */
+export function __resetRetrospect(date?: string) {
+  if (USE_MOCK) return mock__resetRetrospect(date);
+  // real: 서버 상태를 임의로 지울 수 없음. 필요 시 별도 admin API 고려.
+  return;
+}
+
+/* ─────────────────────────────────────────────────────────────
+   5) 전환 가이드
+   - 현재 기본은 MOCK.
+   - 실서버 전환 시:
+     1) .env에 EXPO_PUBLIC_API_MODE=real 추가
+     2) 필요하면 DAILY_RECORDS_BASE로 엔드포인트 경로 조정
+     3) 공용 axios(@/shared/api/client) 토큰 주입 확인(이미 적용)
 ────────────────────────────────────────────────────────────── */

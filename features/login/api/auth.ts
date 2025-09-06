@@ -1,7 +1,7 @@
 // features/login/api/auth.ts
 import { api } from "@features/login/api/client";
 import CookieManager from "@react-native-cookies/cookies";
-import { saveTokens, clearTokens, setAccessTokenCached } from "@/features/login/token.store";
+import { saveTokens, clearTokens, setAccessTokenCached, loadTokens } from "@/features/login/token.store";
 import type { LoginResponse, CommonResponse, MemberMe } from "@/features/login/utils/auth";
 import Constants from "expo-constants";
 import { persistSetCookieSafely } from "@/features/login/persistSetCookieSafely";
@@ -63,9 +63,26 @@ export async function socialLogin(params: {
   // Set-Cookie 반영
   await reflectSetCookie(res.headers);
 
-  // 저장 확인 (엔드포인트 기준)
+  // 🔹 추가: 리프레시 토큰 로컬 저장
   const refreshUrl = `${rawBaseURL}/api/auth/token/refresh`;
   const saved = await CookieManager.get(refreshUrl).catch(async () => CookieManager.get(ORIGIN));
+  const refreshToken = saved?.refresh?.value;
+  
+  if (refreshToken) {
+    await saveTokens({ refresh: refreshToken });
+    console.log("[Auth] Refresh token saved to local storage");
+  } else {
+    console.warn("[Auth] No refresh token found in cookies after login");
+  }
+  
+  // 토큰 저장 상태 확인 로그
+  const tokens = await loadTokens();
+  console.log("[Auth] Token storage status after login:", {
+    hasAccessToken: !!tokens.access,
+    hasRefreshToken: !!tokens.refresh,
+    hasCookieRefresh: !!refreshToken
+  });
+  
   console.log("[Auth] cookie refresh present:", !!saved?.refresh?.value);
 
   return res.data.data;
@@ -85,8 +102,16 @@ export async function refreshTokens() {
     }
     await reflectSetCookie(res.headers);
 
+    // 🔹 추가: 새 리프레시 토큰 로컬 저장
     const refreshUrl = `${rawBaseURL}/api/auth/token/refresh`;
     const saved = await CookieManager.get(refreshUrl).catch(async () => CookieManager.get(ORIGIN));
+    const newRefreshToken = saved?.refresh?.value;
+    
+    if (newRefreshToken) {
+      await saveTokens({ refresh: newRefreshToken });
+      console.log("[Auth] New refresh token saved after renewal");
+    }
+    
     console.log("[Auth] cookie refresh present (after refresh):", !!saved?.refresh?.value);
 
     return res.data.data;

@@ -31,6 +31,17 @@ const ORIGIN = (() => {
   }
 })();
 
+// 🔹 추가: 세션 만료 처리 함수
+async function handleSessionExpired() {
+  try {
+    // 로그인 페이지로 리디렉션 또는 모달 표시
+    // 구체적 구현은 앱의 네비게이션 구조에 따라 결정
+    console.log("[Auth] Session expired, redirecting to login");
+  } catch (e) {
+    console.warn("[Auth] Failed to handle session expiration:", e);
+  }
+}
+
 // ── 디버그 로그
 const hostOf = (url = "") => {
   try {
@@ -150,12 +161,21 @@ api.interceptors.response.use(
         const refreshCookie = cookieMap?.refresh?.value ?? null;
 
         const { refresh: storedRefresh, access } = await loadTokens(); // access 유지
+        
+        // 🔹 우선순위 로직: 쿠키 > 로컬 저장소
         const refresh = refreshCookie || storedRefresh;
         if (!refresh) {
-          console.warn("[Auth] no refresh token (cookie+store both empty)");
+          console.warn("[Auth] No refresh token available:", {
+            cookieRefresh: !!refreshCookie,
+            storedRefresh: !!storedRefresh
+          });
           await clearTokens();
+          // 🔹 추가: 사용자 세션 만료 처리
+          await handleSessionExpired();
           throw error;
         }
+
+        console.log("[Auth] Using refresh token from:", refreshCookie ? "cookie" : "local storage");
 
         // 재발급 요청(쿠키를 헤더로 수동 첨부)
         const res = await axios.post(
@@ -190,12 +210,23 @@ api.interceptors.response.use(
           }
         } catch {}
 
+        // 🔹 추가: 새 리프레시 토큰 로컬 저장
+        const newRefreshMap = await CookieManager.get(refreshUrl).catch(async () => CookieManager.get(ORIGIN));
+        const newRefreshToken = newRefreshMap?.refresh?.value;
+        if (newRefreshToken) {
+          await saveTokens({ refresh: newRefreshToken });
+          console.log("[Auth] New refresh token saved after renewal");
+        }
+
         notifyAll();
         return api(original);
-      } catch (e) {
+      } catch (refreshError) {
+        // 🔹 추가: 리프레시 토큰마저 만료된 경우 처리
+        console.error("[Auth] Token refresh failed:", refreshError);
         await clearTokens();
+        await handleSessionExpired();
         notifyAll();
-        throw e;
+        throw refreshError;
       } finally {
         refreshing = false;
       }

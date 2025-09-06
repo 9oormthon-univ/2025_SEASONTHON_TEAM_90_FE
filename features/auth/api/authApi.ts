@@ -1,20 +1,15 @@
-import axios from 'axios';
+﻿import client from '@/shared/api/client';
 
-const client = axios.create({
-  baseURL: process.env.EXPO_PUBLIC_API_URL, // 예: "https://your-api.com"
-  headers: { 'Content-Type': 'application/json' },
-});
-
-// 소셜 로그인 (카카오 액세스 토큰 -> 서버 JWT 토큰)
+// ?뚯뀥 濡쒓렇??(移댁뭅???≪꽭???좏겙 -> ?쒕쾭 JWT ?좏겙)
 export async function socialLogin(socialAccessToken: string, socialType: 'KAKAO' | 'GOOGLE') {
   const res = await client.post('/api/auth/social/login', {
     socialAccessToken,
     socialType,
   });
-  return res.data; // { accessToken, tokenType, expiresIn, refreshTokenIncluded }
+  return res.data?.data;
 }
 
-// 토큰 재발급
+// ?좏겙 ?щ컻湲?
 export async function refreshToken(refreshToken: string) {
   const res = await client.post(
     '/api/auth/token/refresh',
@@ -24,7 +19,7 @@ export async function refreshToken(refreshToken: string) {
   return res.data;
 }
 
-// 로그아웃
+// 濡쒓렇?꾩썐
 export async function logout(accessToken: string) {
   await client.post(
     '/api/auth/logout',
@@ -32,3 +27,4 @@ export async function logout(accessToken: string) {
     { headers: { Authorization: `Bearer ${accessToken}` } },
   );
 }
+

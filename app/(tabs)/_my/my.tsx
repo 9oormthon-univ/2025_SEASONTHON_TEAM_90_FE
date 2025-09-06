@@ -7,10 +7,15 @@ import SettingsItem from '@/features/mypage/components/SettingsItem';
 import MyPageHeader from '@/features/mypage/components/MyPageHeader';
 
 const MyPageScreen = () => {
+    const handleLogout = () => {
+        // ✅ 로그아웃 로직 (예: 토큰 삭제, 로그인 화면 이동 등)
+        console.log('로그아웃 실행!');
+    };
+
     return (
         <ScrollView className="flex-1 bg-[#F2EFE6]">
             {/* Header */}
-            <MyPageHeader />
+            <MyPageHeader onPressLogout={handleLogout} />
 
             {/* Profile */}
             <ProfileCard />

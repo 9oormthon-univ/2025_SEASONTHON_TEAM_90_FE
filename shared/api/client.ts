@@ -51,7 +51,8 @@ client.interceptors.request.use(async (config) => {
   const token = await getAccessToken();
   if (token) {
     config.headers = config.headers ?? {};
-    (config.headers as any).Authorization = `Bearer ${token}`;
+    const value = token.startsWith('Bearer ') ? token : `Bearer ${token}`;
+    (config.headers as any).Authorization = value;
   }
   return config;
 });

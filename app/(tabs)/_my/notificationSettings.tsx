@@ -1,108 +1,85 @@
-import React, { useState, useEffect } from "react";
-import { View, Text, Switch, Alert, Platform } from "react-native";
-import TopBar from "@/components/Common/TopBar";
-import { useRouter } from "expo-router";
-import messaging from "@react-native-firebase/messaging";
-import DeviceInfo from "react-native-device-info";
-import notifee, { TriggerType, RepeatFrequency, TimestampTrigger } from "@notifee/react-native";
-import client from "@/shared/api/client";
+import React, { JSX } from 'react'; // CHANGED: JSX/useState 불필요 import 제거
+import { View, Text, Image, TouchableOpacity } from 'react-native';
+import { useSessionStore } from '@/features/auth/store/session.store';
+import { useRouter } from 'expo-router';
+import client, { setAccessToken, setRefreshToken } from '@/shared/api/client';
+import { devMockLogin } from '@/features/login/api/login'; // CHANGED: 공용 로그인 API 래퍼 사용
 
-async function getPermanentDeviceId() {
-  if (Platform.OS === "android") return await DeviceInfo.getAndroidId();
-  if (Platform.OS === "ios") return await DeviceInfo.getVendorId();
-  return DeviceInfo.getUniqueId();
-}
-
-export default function NotificationSettings() {
+const ProfileCard = (): JSX.Element => { // CHANGED: 반환 타입 명시(Strict TS)
+  const { user, setUser } = useSessionStore();
   const router = useRouter();
-  const [pushEnabled, setPushEnabled] = useState(false);
-  const [fcmToken, setFcmToken] = useState<string | null>(null);
 
-  useEffect(() => {
-    const initFCM = async () => {
-      try {
-        const authStatus = await messaging().requestPermission();
-        const enabled =
-          authStatus === messaging.AuthorizationStatus.AUTHORIZED ||
-          authStatus === messaging.AuthorizationStatus.PROVISIONAL;
-        if (!enabled) {
-          Alert.alert("알림 권한이 거부되었습니다.");
-          return;
-        }
-
-        const token = await messaging().getToken();
-        setFcmToken(token);
-
-        const deviceId = await getPermanentDeviceId();
-        await client.post("/api/notifications/tokens", { token, deviceId });
-
-        setPushEnabled(true);
-        console.log("✅ 토큰 등록 완료:", { token, deviceId });
-      } catch (err) {
-        console.error("❌ FCM 초기화 실패:", err);
-      }
-    };
-    initFCM();
-  }, []);
-
-  const scheduleDailyNotifications = async () => {
-    const now = new Date();
-
-    const morning = new Date(now);
-    morning.setHours(8, 0, 0, 0);
-    if (morning <= now) morning.setDate(morning.getDate() + 1);
-
-    const morningTrigger: TimestampTrigger = {
-      type: TriggerType.TIMESTAMP,
-      timestamp: morning.getTime(),
-      repeatFrequency: RepeatFrequency.DAILY,
-    };
-    await notifee.createTriggerNotification({ title: "굿모닝 ☀️", body: "아침 8시 알림입니다!" }, morningTrigger);
-
-    const evening = new Date(now);
-    evening.setHours(22, 0, 0, 0);
-    if (evening <= now) evening.setDate(evening.getDate() + 1);
-
-    const eveningTrigger: TimestampTrigger = {
-      type: TriggerType.TIMESTAMP,
-      timestamp: evening.getTime(),
-      repeatFrequency: RepeatFrequency.DAILY,
-    };
-    await notifee.createTriggerNotification({ title: "굿나잇 🌙", body: "저녁 10시 알림입니다!" }, eveningTrigger);
+  const handleEditProfile = () => {
+    router.push('/(tabs)/_my/EditProfileScreen');
   };
 
-  const togglePush = async (value: boolean) => {
-    setPushEnabled(value);
-    if (value) {
-      if (fcmToken) {
-        const deviceId = await getPermanentDeviceId();
-        await client.post("/api/notifications/tokens", { token: fcmToken, deviceId });
-        console.log("✅ 푸시 알림 활성화:", fcmToken);
-        await scheduleDailyNotifications();
-      }
-    } else {
-      if (fcmToken) {
-        await client.delete(`/api/notifications/tokens/${fcmToken}`);
-        console.log("❌ 푸시 알림 비활성화:", fcmToken);
-        await notifee.cancelAllNotifications();
-      }
+  const handleMockLogin = async () => {
+    try {
+      // CHANGED: 직접 POST 대신 래퍼 사용(응답 스키마 변화에도 안전)
+      const loginRes = await devMockLogin({
+        email: 'test@example.com',
+        name: '테스트유저',
+        socialType: 'KAKAO',
+        mockSocialId: 'mock_user_001',
+      });
+
+      // CHANGED: setAccessToken이 내부에서 'Bearer ' 접두어 제거
+      await setAccessToken(loginRes.accessToken ?? null);
+      await setRefreshToken((loginRes as any)?.refreshToken ?? null);
+
+      // CHANGED: /me 응답이 통합 래핑형(data.data) 또는 평문(data) 모두 대응
+      const meRes = await client.get('/api/members/me');
+      const me = meRes?.data?.data ?? meRes?.data;
+      setUser(me);
+
+      router.push('/(tabs)/_my/EditProfileScreen');
+    } catch (err: any) {
+      console.error('❌ Mock 로그인 실패:', err?.response?.data ?? err);
     }
   };
 
   return (
-    <View className="flex-1 bg-[#F7F3EB]">
-      <TopBar title="알림 설정" bgColor="#F7F3EB" style={{ marginTop: 37 }} onBackPress={() => router.back()} />
-      <View className="p-4">
-        <View className="bg-[#F7F7F7] rounded-2xl p-5 mb-4 flex-row justify-between items-center">
-          <Text style={{ fontFamily: "Inter", fontWeight: "500", fontSize: 17 }}>푸시 알림</Text>
-          <Switch
-            value={pushEnabled}
-            onValueChange={togglePush}
-            thumbColor={pushEnabled ? "#5F5548" : "#f4f3f4"}
-            trackColor={{ false: "#d1d5db", true: "#CBC9C2" }}
+    <View className="items-center mt-6">
+      <View className="items-center justify-center w-40 h-40 bg-white rounded-full shadow">
+        {user?.profileImageUrl ? (
+          <Image
+            source={{ uri: user.profileImageUrl }}
+            className="rounded-full w-30 h-30"
+            resizeMode="cover"
           />
-        </View>
+        ) : (
+          <Image
+            // source={require('../assets/avatar.png')}
+            className="w-40 h-25"
+            resizeMode="contain"
+          />
+        )}
       </View>
+
+      <Text className="mt-3 text-lg font-semibold text-black">
+        {user?.nickname ?? user?.name ?? '게스트'}
+      </Text>
+
+      <TouchableOpacity
+        className="px-6 py-2 mt-2 bg-white rounded-full shadow-sm"
+        style={{ backgroundColor: '#F7F7F7' }}
+        onPress={user ? handleEditProfile : handleMockLogin}
+      >
+        <Text
+          className="text-center"
+          style={{
+            fontFamily: 'Pretendard',
+            fontWeight: '400',
+            fontSize: 14,
+            lineHeight: 21,
+            color: '#3A332A',
+          }}
+        >
+          {user ? '내 정보 수정' : 'Mock 로그인'}
+        </Text>
+      </TouchableOpacity>
     </View>
   );
-}
+};
+
+export default ProfileCard;

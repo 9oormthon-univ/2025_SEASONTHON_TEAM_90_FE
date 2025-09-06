@@ -1,19 +1,19 @@
-import { View, Text } from "react-native";
+import React, { useEffect } from "react";
+import { View, Text, Alert } from "react-native";
 import MonthHeader from "./MonthHeader";
 import CalendarGrid from "./CalendarGrid";
 import { useCalendar } from "../hooks/useCalendar";
 import { todayYMD } from "../utils/date";
 import { getRoutines } from "../../routine/api/getRoutines";
-import { Alert } from "react-native";
 
 export type CalendarViewProps = { variant?: "month" | "week" };
-/** 캘린더 컴포넌트 */
+
+/** 캘린더 컴포넌트(이 화면은 항상 더미 데이터 사용) */
 const CalendarView: React.FC<CalendarViewProps> = ({ variant = "month" }) => {
   const { currentMonth, isLoading, matrix, getDayMeta, goPrev, goNext, goToday } = useCalendar();
   const today = todayYMD();
 
   const handleSelect = async (ymd: string) => {
-    // 문자열 비교로도 OK(YYYY-MM-DD 형식)
     if (ymd >= today) {
       try {
         const { routines, totalCount } = await getRoutines(ymd);
@@ -24,7 +24,6 @@ const CalendarView: React.FC<CalendarViewProps> = ({ variant = "month" }) => {
       }
       return;
     }
-    // 과거 날짜 → 회고 페이지 이동
     const { useRouter } = await import("expo-router");
     const router = useRouter();
     router.push({ pathname: "/retrospect", params: { date: ymd } });

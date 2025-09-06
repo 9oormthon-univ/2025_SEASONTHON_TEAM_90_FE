@@ -7,6 +7,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   name: "Seasonthon Team90",
   slug: "seasonthon-team90",
   version: "1.0.0",
+  owner: "team90",
   orientation: "portrait",
   scheme: "goorm90",
   userInterfaceStyle: "automatic",

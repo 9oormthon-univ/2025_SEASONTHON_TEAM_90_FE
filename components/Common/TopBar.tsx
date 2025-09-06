@@ -36,11 +36,12 @@ export default function TopBar({
     if (router.canGoBack()) router.back();
     else router.replace("/home");
   };
+
   return (
     <View
       style={[
         styles.wrapper,
-        { backgroundColor: bgColor }, 
+        { backgroundColor: bgColor, paddingTop: 40 }, // ✅ 안전 영역만큼 paddingTop
       ]}
     >
       <View style={[styles.container, style]}>
@@ -69,7 +70,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     paddingHorizontal: 16,
-    backgroundColor: "transparent", 
+    backgroundColor: "transparent",
   },
   leftButton: { marginRight: 16 },
   rightButton: { marginLeft: "auto" },

@@ -1,11 +1,11 @@
-import React, { useState } from 'react';
-import { ScrollView, View, Text, TouchableOpacity, Alert } from 'react-native';
-import ProfileCard from '@/features/mypage/components/ProfileCard';
-import StatsCard from '@/features/mypage/components/StatsCard';
-import BadgeList from '@/features/mypage/components/BadgeList';
-import SettingsItem from '@/features/mypage/components/SettingsItem';
-import MyPageHeader from '@/features/mypage/components/MyPageHeader';
-import { useRouter } from 'expo-router';
+import React, { useState } from "react";
+import { ScrollView, View, Text, TouchableOpacity, Alert } from "react-native";
+import ProfileCard from "@/features/mypage/components/ProfileCard";
+import StatsCard from "@/features/mypage/components/StatsCard";
+import BadgeList from "@/features/mypage/components/BadgeList";
+import SettingsItem from "@/features/mypage/components/SettingsItem";
+import MyPageHeader from "@/features/mypage/components/MyPageHeader";
+import { useRouter } from "expo-router";
 
 const MyPageScreen = () => {
   const [logoutModalVisible, setLogoutModalVisible] = useState(false);
@@ -35,18 +35,15 @@ const MyPageScreen = () => {
         <View className="mt-4 mb-8">
           <SettingsItem
             title="알림 설정"
-            onPress={() => router.push('/(tabs)/_my/notificationSettings')}
+            onPress={() => router.push("/(tabs)/_my/notificationSettings")}
           />
         </View>
 
         {/* 회원 탈퇴 버튼 */}
         <TouchableOpacity onPress={() => setDeleteModalVisible(true)} className="mt-40">
-          <Text className="text-sm text-center text-gray-500 underline">
-            회원 탈퇴
-          </Text>
+          <Text className="text-sm text-center text-gray-500 underline">회원 탈퇴</Text>
         </TouchableOpacity>
       </ScrollView>
-
     </>
   );
 };

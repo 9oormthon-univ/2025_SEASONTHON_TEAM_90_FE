@@ -1,7 +1,7 @@
 import React from "react";
 import { View, ActivityIndicator } from "react-native";
-import { useAuthStore } from "@shared/store/authStore"; 
-import DashboardPage from "@/features/dashboard/pages/DashboardPage"; 
+import { useAuthStore } from "@shared/store/authStore";
+import DashboardPage from "@/features/dashboard/pages/DashboardPage";
 
 export default function DashboardTabScreen() {
   // 전역 스토어에서 로그인한 사용자의 memberId

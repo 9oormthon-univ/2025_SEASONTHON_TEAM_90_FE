@@ -12,7 +12,7 @@ import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { BottomSheetModalProvider } from "@gorhom/bottom-sheet";
 
-SplashScreen.preventAutoHideAsync().catch(() => { });
+SplashScreen.preventAutoHideAsync().catch(() => {});
 
 export default function RootLayout() {
   const [fontsLoaded] = useFonts({
@@ -22,7 +22,7 @@ export default function RootLayout() {
 
   useEffect(() => {
     if (fontsLoaded) {
-      SplashScreen.hideAsync().catch(() => { });
+      SplashScreen.hideAsync().catch(() => {});
     }
   }, [fontsLoaded]);
 
@@ -32,11 +32,11 @@ export default function RootLayout() {
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider>
         {/* ✅ 전역으로 AuthProvider로 감싸기 */}
-        <AuthProvider>
-          <BottomSheetModalProvider>
-            <Stack screenOptions={{ headerShown: false }} />
-          </BottomSheetModalProvider>
-        </AuthProvider>
+        {/* <AuthProvider> */}
+        <BottomSheetModalProvider>
+          <Stack screenOptions={{ headerShown: false }} />
+        </BottomSheetModalProvider>
+        {/* </AuthProvider> */}
       </SafeAreaProvider>
     </GestureHandlerRootView>
   );

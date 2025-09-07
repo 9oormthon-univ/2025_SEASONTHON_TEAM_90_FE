@@ -4,6 +4,8 @@ import { applyRetrospectResult } from "../../routine/api/routines";
 // CHANGED: 실서버 전환용 공용 axios 클라이언트
 import client from "@/shared/api/client";
 
+const clone = <T>(obj: T): T => structuredClone(obj);
+
 /* ─────────────────────────────────────────────────────────────
    0) 런타임 모드 스위치
    - 기본(mock): EXPO_PUBLIC_API_MODE 미설정 또는 'mock'
@@ -234,7 +236,7 @@ const toRetrospectFromWire = (date: string, resp: DailyRecordResponse): Retrospe
       status: "NONE" as RoutineStatus,
     }));
 
-  const routines = [...recorded, ...supplement];
+  const routines = [...routinesFromRecords, ...supplement];
 
   // 서버 emotion은 문자열(any) → 프론트 Mood로 들어가는 값은 일단 그대로 허용(또는 매핑 테이블 적용)
   const emotion = resp.reflection?.emotion ?? null;
@@ -295,7 +297,7 @@ async function real_saveRetrospect(
     routineRecords: (routinesSnapshot ?? []).map((it) => ({
       routineId: it.id,
       performanceLevel: toPerformanceLevel(it.status),
-    }));
+    }))
   }
 
   await client.post<CommonResponse<DailyRecordResponse>>(
@@ -371,6 +373,11 @@ export function __resetRetrospect(date?: string) {
   return;
 }
 
+
+function sleep(arg0: number) {
+  // ✅ 수정: 임시 구현 추가 (실제로는 비동기 처리를 위해 Promise 사용)
+  return new Promise(resolve => setTimeout(resolve, arg0));
+}
 /* ─────────────────────────────────────────────────────────────
    5) 전환 가이드
    - 현재 기본은 MOCK.
@@ -378,24 +385,5 @@ export function __resetRetrospect(date?: string) {
      1) .env에 EXPO_PUBLIC_API_MODE=real 추가
      2) 필요하면 DAILY_RECORDS_BASE로 엔드포인트 경로 조정
      3) 공용 axios(@/shared/api/client) 토큰 주입 확인(이미 적용)
+     await api.post(`/api/daily-records/${date}`, body);
 ────────────────────────────────────────────────────────────── */
-=======
-  await api.post(`/api/daily-records/${date}`, body);
-}
-
-/**
- * 개별 루틴 상태 즉시 저장용 엔드포인트는 스펙에 없음.
- * 화면에서는 로컬 상태만 바꾸고, 최종 저장 시 saveRetrospect로 통합 POST하는 패턴 권장.
- * 필요 시 서버와 PATCH 엔드포인트 협의 후 아래 함수 구현.
- */
-export async function setRoutineStatus(_date: string, _routineId: number, _status: RoutineStatus) {
-  // no-op (실서버에 개별 패치 스펙 없음)
-  return;
-}
-
-// 제출 여부 확인: 별도 엔드포인트 없으므로 get으로 판단
-export async function isSubmitted(date: string): Promise<boolean> {
-  const r = await fetchRetrospect(date);
-  return !!r.submitted;
-}
-

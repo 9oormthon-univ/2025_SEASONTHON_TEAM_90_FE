@@ -250,9 +250,9 @@ async function real_saveRetrospect(
     reflection:
       note || mood
         ? {
-          content: note || "",
-          emotion: toEmotion(mood),
-        }
+            content: note || "",
+            emotion: toEmotion(mood),
+          }
         : undefined,
     routineRecords: (routinesSnapshot ?? []).map((it) => ({
       routineId: it.id,

@@ -3,14 +3,14 @@
  * ✅ EXPO_PUBLIC_API_MODE=real 로 설정하면 주석 해제 없이도 실서버로 전환됩니다.
  *
  * API 명세서 요약 (필요 엔드포인트)
- * - GET    /api/routines                          : 내 루틴 목록
- * - POST   /api/routines                          : 루틴 생성
- * - GET    /api/routines/:id                      : 루틴 상세 (옵션)
- * - PUT    /api/routines/:id                      : 루틴 수정(제목은 수정 불가)
- * - DELETE /api/routines/:id                      : 루틴 삭제
- * - GET    /api/routines/categories               : 카테고리 목록 (비인증)
- * - GET    /api/routines/adaptation-check         : 성장/감소 후보 (옵션)
- * - PATCH  /api/routines/:id/target?action=...    : 목표 조정(INCREASE/DECREASE/RESET) (옵션)
+ * - GET    /api/routines                          : 내 루틴 목록
+ * - POST   /api/routines                          : 루틴 생성
+ * - GET    /api/routines/:id                      : 루틴 상세 (옵션)
+ * - PUT    /api/routines/:id                      : 루틴 수정(제목은 수정 불가)
+ * - DELETE /api/routines/:id                      : 루틴 삭제
+ * - GET    /api/routines/categories               : 카테고리 목록 (비인증)
+ * - GET    /api/routines/adaptation-check         : 성장/감소 후보 (옵션)
+ * - PATCH  /api/routines/:id/target?action=...    : 목표 조정(INCREASE/DECREASE/RESET) (옵션)
  */
 
 import client from "@/shared/api/client"; // CHANGED: 실서버 전환 시 사용
@@ -445,8 +445,7 @@ async function real_patchRoutineTarget(
     {},
     { params: { action } },
   );
-  // ✅ 수정: 'data' 변수가 선언되지 않아 'res.data.data'를 반환하도록 수정했습니다.
-  return res.data.data;
+  return data;
 }
 
 /* ─────────────────────────────────────────────────────────────────────────────

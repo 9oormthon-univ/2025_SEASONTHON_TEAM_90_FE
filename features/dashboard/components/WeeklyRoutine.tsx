@@ -4,7 +4,7 @@ import type { WeeklyDashboardData } from "../types";
 export interface WeeklyRoutineProps {
   weekLabel: string;
   completionRate: number;
-    routines: WeeklyDashboardData["routine_performance"];
+  routines: WeeklyDashboardData["routine_performance"];
 }
 /**카테고리 별 컬러 */
 const barColorByName = (name: string) => {
@@ -41,7 +41,7 @@ export function WeeklyRoutine({ weekLabel, completionRate, routines }: WeeklyRou
 
           return (
             <View key={item.routine_id} className={idx === 0 ? "" : "mt-[12px]"}>
-              <View className="flex-row items-center justify-around">
+              <View className="flex-row items-center ">
                 {/* 좌측 점 + 카테고리명 */}
                 <View className="flex-row items-baseline mr-[110px]">
                   <View
@@ -53,7 +53,7 @@ export function WeeklyRoutine({ weekLabel, completionRate, routines }: WeeklyRou
 
                 {/* 중앙 바 */}
                 <View className="flex-1 mx-2">
-                  <View className="h-3 overflow-hidden rounded-full bg-[#D8D6CF]">
+                  <View className=" flex-none h-3 overflow-hidden rounded-full bg-[#D8D6CF]">
                     <View
                       style={{ width: `${rate}%`, backgroundColor: color }}
                       className="h-3 rounded-full"

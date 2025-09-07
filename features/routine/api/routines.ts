@@ -108,14 +108,14 @@ async function mock_updateRoutineApi(id: number, form: AddRoutineForm): Promise<
   DB = DB.map((r) =>
     r.id === id
       ? ({
-          ...r,
-          category: form.category ?? r.category,
-          growthMode: !!form.growthMode,
-          goalType: form.growthMode ? form.goalType : undefined,
-          goalValue: form.growthMode ? form.goalValue : undefined,
-          growthPeriodDays: form.growthMode ? form.growthPeriodDays : undefined,
-          growthIncrement: form.growthMode ? form.growthIncrement : undefined,
-        } as Routine)
+        ...r,
+        category: form.category ?? r.category,
+        growthMode: !!form.growthMode,
+        goalType: form.growthMode ? form.goalType : undefined,
+        goalValue: form.growthMode ? form.goalValue : undefined,
+        growthPeriodDays: form.growthMode ? form.growthPeriodDays : undefined,
+        growthIncrement: form.growthMode ? form.growthIncrement : undefined,
+      } as Routine)
       : r,
   );
   const found = DB.find((r) => r.id === id)!;

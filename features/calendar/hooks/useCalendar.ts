@@ -32,13 +32,13 @@ export const useCalendar = () => {
 
       setLoading(true);
       try {
-        // === [REAL API] ===
-        const monthly: MonthlySuccessRateDto = await getMonthlySuccessRate(
-          currentMonth,
-          ctl.signal,
-        ); // [changed]
+        // // === [REAL API] ===
+        // const monthly: MonthlySuccessRateDto = await getMonthlySuccessRate(
+        //   currentMonth,
+        //   ctl.signal,
+        // ); 
         // === [MOCK 참고용] ===
-        // const monthly = await getMonthlySuccessRateMock(currentMonth, ctl.signal);
+        const monthly = await getMonthlySuccessRate(currentMonth, ctl.signal);
 
         const days: Record<string, DayAggregate> = {};
         monthly.daily_success_rates.forEach((d) => {

@@ -1,47 +1,39 @@
+// features/dashboard/components/WeeklyAiAnalyze.tsx
 import React, { useMemo } from "react";
-import { View, Text, ActivityIndicator } from "react-native";
-import { useWeeklyInsight } from "../hooks/useWeeklyInsight";
+import { View, Text } from "react-native";
+// import { useWeeklyInsight } from "../hooks/useWeeklyInsight"; // 수정됨: 더미 전용으로 제거
 import AnalyzeIcon from "@/features/dashboard/assets/analyze.svg";
 import type { WeeklyDashboardData, Suggestion } from "../types";
 import { buildStreakMap, getStreakBadgeForHighlight } from "../utils/insight";
 import { getWeekLabel } from "../utils/date";
+import { mockWeeklyInsight } from "../utils/mock"; // 수정됨: 더미 데이터 사용
 
-
+// 수정됨: 더미 전용 Props로 축소
 export interface WeeklyAiAnalyzeProps {
   weekStartISO: string;
-  memberId: number;
-  force?: boolean;
-  AnalyzingIcon?: React.ComponentType;
-  delayMs?: number;
   routines?: WeeklyDashboardData["routine_performance"];
 }
 
 export default function WeeklyAiAnalyze({
   weekStartISO,
-  memberId,
-  force,
-  AnalyzingIcon,
-  // delayMs = 800, // 강제 딜레이
   routines,
 }: WeeklyAiAnalyzeProps) {
-  const Icon = AnalyzingIcon ?? AnalyzeIcon;
+  // 수정됨: 항상 더미 데이터 사용
+  const data = useMemo(() => mockWeeklyInsight(weekStartISO), [weekStartISO]); // 수정됨
+  const loading = false; // 수정됨
+  const error = null; // 수정됨
 
-  const { data, loading, error } = useWeeklyInsight(weekStartISO, memberId, force ?? false);
-  // Mock 데이터
-  // const hook = useWeeklyInsight(weekStartISO, memberId, force ?? false);
-  // const [mockState, setMockState] = useState<typeof hook>({ data: null, loading: !!mockData, error: null } as any);
-
-  // const data = mockData ? mockState.data : hook.data;
-  // const loading = mockData ? mockState.loading : hook.loading;
-  // const error = mockData ? mockState.error : hook.error;
-
-  // 연산 최적화
   const weekLabel = useMemo(() => getWeekLabel(weekStartISO), [weekStartISO]);
   const streakMap = useMemo(() => buildStreakMap(routines), [routines]);
 
   return (
     <View>
-      {loading && <View className="items-center">{Icon ? <Icon /> : <ActivityIndicator />}</View>}
+      {/* 수정됨: 더미 전용이라 로딩/에러 분기 단순화 */}
+      {loading && (
+        <View className="items-center">
+          <AnalyzeIcon />
+        </View>
+      )}
 
       {!loading && !!error && (
         <Text className="text-sm text-red-500">분석을 가져오지 못했습니다.</Text>
@@ -71,7 +63,7 @@ export default function WeeklyAiAnalyze({
             </View>
           )}
 
-          {/* 제안 하기 */}
+          {/* 제안 */}
           {data.suggestions.length > 0 && (
             <View className="p-5 rounded-xl bg-[#EFECE4]">
               <Text className="text-sm text-[#5F5548] mb-2">제안</Text>

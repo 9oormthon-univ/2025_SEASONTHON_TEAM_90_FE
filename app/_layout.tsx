@@ -1,4 +1,3 @@
-// app/_layout.tsx
 import "react-native-gesture-handler";
 import "react-native-reanimated";
 
@@ -32,11 +31,9 @@ export default function RootLayout() {
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider>
         {/* ✅ 전역으로 AuthProvider로 감싸기 */}
-        {/* <AuthProvider> */}
         <BottomSheetModalProvider>
           <Stack screenOptions={{ headerShown: false }} />
         </BottomSheetModalProvider>
-        {/* </AuthProvider> */}
       </SafeAreaProvider>
     </GestureHandlerRootView>
   );

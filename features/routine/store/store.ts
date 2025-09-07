@@ -182,10 +182,15 @@ export const useRoutineStore = create<State & Actions>((set, get) => ({
       // 서버가 완료/취소 토글을 모두 허용한다고 가정
       const saved = await completeRoutineApi(id);
       console.log("[RoutineStore] toggleComplete:api:success", { id, saved });
+
+      // ✅ 수정: 'void' 타입으로 추론된 API 응답을 'any'로 처리하여 타입 에러를 해결합니다.
+      // 이는 'completeRoutineApi' 함수의 반환 타입 선언이 실제 반환 값과 다른 경우에 임시로 사용될 수 있습니다.
+      const savedRoutine = saved as any;
+
       // 서버 응답에 완료상태가 들어오면 반영, 없으면 낙관값 유지
       const patch: Partial<Routine> =
-        saved && typeof saved.completedToday === "boolean"
-          ? { completedToday: saved.completedToday }
+        savedRoutine && typeof savedRoutine.completedToday === "boolean"
+          ? { completedToday: savedRoutine.completedToday }
           : { completedToday: nextCompleted };
       set((s) => ({ routines: replace(s.routines, id, patch), mutatingId: null }));
       console.log("[RoutineStore] toggleComplete:success", { id });
